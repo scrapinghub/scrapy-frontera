@@ -1,4 +1,4 @@
-Frontera scheduler for Scrapy
-=============================
+More Flexible Frontera scheduler for Scrapy
+===========================================
 
 
