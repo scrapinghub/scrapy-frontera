@@ -15,4 +15,12 @@ In your project settings.py::
 
     SCHEDULER = 'scrapy_frontera.scheduler.FronteraScheduler'
 
+    DOWNLOADER_MIDDLEWARES = {
+        'frontera.contrib.scrapy.middlewares.schedulers.SchedulerDownloaderMiddleware': 999,
+    }
+
+    SPIDER_MIDDLEWARES = {
+        'frontera.contrib.scrapy.middlewares.schedulers.SchedulerSpiderMiddleware': 999,
+    }
+
 Plus the usual frontera setup
