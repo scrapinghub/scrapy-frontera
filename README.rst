@@ -1,0 +1,4 @@
+Frontera scheduler for Scrapy
+=============================
+
+
