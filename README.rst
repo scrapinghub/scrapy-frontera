@@ -13,6 +13,6 @@ Usage:
 
 In your project settings.py::
 
-    SCHEDULER = 'frontera_scrapy.scheduler.FronteraScheduler'
+    SCHEDULER = 'scrapy_frontera.scheduler.FronteraScheduler'
 
 Plus the usual frontera setup
