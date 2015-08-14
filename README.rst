@@ -7,3 +7,12 @@ More flexible and featured frontera scheduler for scrapy, which don't force to r
 - Allows to set frontera settings from spider constructor, by loading frontera manager after spider instantiation.
 - Allows frontera components to access scrapy stat manager instance by adding STATS_MANAGER frontera setting
 - Better request/response converters
+
+Usage:
+------
+
+In your project settings.py::
+
+    SCHEDULER = 'frontera_scrapy.scheduler.FronteraScheduler'
+
+Plus the usual frontera setup
