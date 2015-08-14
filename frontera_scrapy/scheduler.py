@@ -1,5 +1,6 @@
 from scrapy.core.scheduler import Scheduler
 from scrapy.http import Request
+from scrapy.utils.misc import load_object
 from scrapy import log
 
 from collections import deque
@@ -71,7 +72,8 @@ class StatsManager(object):
 
 class FronteraScheduler(Scheduler):
 
-    def __init__(self, crawler):
+    def __init__(self, dupefilter, crawler):
+        self.df = dupefilter
         self.crawler = crawler
         self.stats_manager = StatsManager(crawler.stats)
         self._pending_requests = deque()
@@ -81,9 +83,15 @@ class FronteraScheduler(Scheduler):
 
     @classmethod
     def from_crawler(cls, crawler):
-        return cls(crawler)
+        settings = crawler.settings
+        dupefilter_cls = load_object(settings['DUPEFILTER_CLASS'])
+        dupefilter = dupefilter_cls.from_settings(settings)
+        return cls(dupefilter, crawler)
 
     def enqueue_request(self, request):
+        if not request.dont_filter and self.df.request_seen(request):
+            self.df.log(request, self.spider)
+            return False
         if not self._request_is_redirected(request):
             self.frontier.add_seeds([request])
             self.stats_manager.add_seeds()
@@ -127,12 +135,14 @@ class FronteraScheduler(Scheduler):
         log.msg('Starting frontier', log.INFO)
         if not self.frontier.manager.auto_start:
             self.frontier.start()
+        return self.df.open()
 
     def close(self, reason):
         log.msg('Finishing frontier (%s)' % reason, log.INFO)
         self.frontier.stop()
         self.stats_manager.set_iterations(self.frontier.manager.iteration)
         self.stats_manager.set_pending_requests(len(self))
+        return self.df.close(reason)
 
     def __len__(self):
         return len(self._pending_requests)
