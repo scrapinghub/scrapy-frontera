@@ -1,9 +1,13 @@
+import logging
+
 from scrapy.core.scheduler import Scheduler
 from scrapy.http import Request
-from scrapy import log
 
 from frontera.contrib.scrapy.settings_adapter import ScrapySettingsAdapter
 from .manager import ScrapyFrontierManager
+
+
+LOG = logging.getLogger(__name__)
 
 
 class FronteraScheduler(Scheduler):
@@ -44,13 +48,13 @@ class FronteraScheduler(Scheduler):
         self.frontier = ScrapyFrontierManager(settings)
 
         self.frontier.set_spider(spider)
-        log.msg('Starting frontier', log.INFO)
+        LOG.info('Starting frontier')
         if not self.frontier.manager.auto_start:
             self.frontier.start()
 
     def close(self, reason):
         super(FronteraScheduler, self).close(reason)
-        log.msg('Finishing frontier (%s)' % reason, log.INFO)
+        LOG.info('Finishing frontier (%s)' % reason)
         self.frontier.stop()
         return self.df.close(reason)
 
