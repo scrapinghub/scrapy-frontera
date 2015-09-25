@@ -1,10 +1,6 @@
 from scrapy.core.scheduler import Scheduler
 from scrapy.http import Request
-from scrapy.utils.misc import load_object
 from scrapy import log
-
-from collections import deque
-from time import time
 
 from frontera.contrib.scrapy.settings_adapter import ScrapySettingsAdapter
 from .manager import ScrapyFrontierManager
