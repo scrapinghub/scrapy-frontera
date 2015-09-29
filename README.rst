@@ -6,8 +6,7 @@ capabilities already present in scrapy, so it provides:
 
 - Scrapy handled request dupefilter
 - Scrapy handled disk and memory request queues
-- Only send to frontera requests marked to be processed by it (using request meta attribute `cf_store` to True), thus avoiding lot of conflicts
-    and missing features.
+- Only send to frontera requests marked to be processed by it (using request meta attribute ``cf_store`` to True), thus avoiding lot of conflicts and missing features.
 - Allows to set frontera settings from spider constructor, by loading frontera manager after spider instantiation.
 - Allows frontera components to access scrapy stat manager instance by adding STATS_MANAGER frontera setting
 - Better request/response converters
@@ -29,5 +28,5 @@ In your project settings.py::
 
 Plus the usual Frontera setup.
 
-Requests will go through the Frontera pipeline only if the flag `cf_store` with value True is included in the request meta. If `cf_store` is not present
+Requests will go through the Frontera pipeline only if the flag ``cf_store`` with value True is included in the request meta. If ``cf_store`` is not present
 or is False, requests will be processed as normal scrapy request.
