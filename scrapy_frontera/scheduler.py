@@ -24,10 +24,21 @@ class FronteraScheduler(Scheduler):
             self._get_requests_from_backend()
         return super(FronteraScheduler, self).next_request()
 
+    def is_frontera_request(self, request):
+        """
+        Only requests which its callback is the spider can be sent 
+        """
+        if request.meta.get('cf_store', False):
+            if request.callback is None or hasattr(request.callback, 'im_self') and \
+                        request.callback.im_self is self.spider:
+                return True
+            raise ValueError('Request <{}>: frontera request callback must be a spider method.'.format(request))
+        return False
+
     def process_spider_output(self, response, result, spider):
         links = []
         for element in result:
-            if isinstance(element, Request) and element.meta.get('cf_store', False):
+            if isinstance(element, Request) and self.is_frontera_request(element):
                 links.append(element)
             else:
                 yield element
@@ -38,7 +49,7 @@ class FronteraScheduler(Scheduler):
 
     def process_exception(self, request, exception, spider):
         error_code = self._get_exception_code(exception)
-        if request.meta.get('cf_store', False):
+        if self.is_frontera_request(request):
             self.frontier.request_error(request=request, error=error_code)
 
     def open(self, spider):
