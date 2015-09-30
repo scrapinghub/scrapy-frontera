@@ -38,7 +38,8 @@ class FronteraScheduler(Scheduler):
 
     def process_exception(self, request, exception, spider):
         error_code = self._get_exception_code(exception)
-        self.frontier.request_error(request=request, error=error_code)
+        if request.meta.get('cf_store', False):
+            self.frontier.request_error(request=request, error=error_code)
 
     def open(self, spider):
         super(FronteraScheduler, self).open(spider)
