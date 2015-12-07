@@ -1,1 +1,1 @@
--e git+https://github.com/scrapinghub/frontera.git#egg=frontera
+frontera==0.3.3
