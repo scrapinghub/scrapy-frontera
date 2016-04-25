@@ -30,6 +30,8 @@ class RequestConverter(BaseRequestConverter):
             'scrapy_body': scrapy_request.body,
             'origin_is_frontier': True,
         }
+        if 'frontier_fingerprint' in scrapy_request.meta:
+            meta['frontier_fingerprint'] = scrapy_request.meta['frontier_fingerprint']
         return FrontierRequest(url=scrapy_request.url,
                                method=scrapy_request.method,
                                headers=scrapy_request.headers,
