@@ -26,6 +26,10 @@ In your project settings.py::
         'frontera.contrib.scrapy.middlewares.schedulers.SchedulerSpiderMiddleware': 999,
     }
 
+    # Set to True if you want start requests to be redirected to frontier
+    # By default they go directly to scrapy downloader
+    # FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER = False
+
 Plus the usual Frontera setup.
 
 Requests will go through the Frontera pipeline only if the flag ``cf_store`` with value True is included in the request meta. If ``cf_store`` is not present

@@ -59,6 +59,10 @@ class FronteraScheduler(Scheduler):
         self.frontier = ScrapyFrontierManager(settings)
 
         self.frontier.set_spider(spider)
+
+        if self.crawler.settings.getbool('FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER'):
+            self.frontier.add_seeds(spider.start_requests())
+
         LOG.info('Starting frontier')
         if not self.frontier.manager.auto_start:
             self.frontier.start()
