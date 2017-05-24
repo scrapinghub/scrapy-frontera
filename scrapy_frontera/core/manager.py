@@ -1,6 +1,10 @@
+from collections import Iterable
+from types import GeneratorType
+
 from frontera.core.manager import FrontierManager as FronteraFrontierManager
 from frontera.settings import Settings
 
+from scrapy_frontera.settings import DEFAULT_SETTINGS
 
 class FrontierManager(FronteraFrontierManager):
 
@@ -12,6 +16,7 @@ class FrontierManager(FronteraFrontierManager):
         :ref:`frontier default settings <frontier-default-settings>` are used.
         """
         manager_settings = Settings.object_from(settings)
+        settings.set_from_dict(DEFAULT_SETTINGS)
         return cls(request_model=manager_settings.REQUEST_MODEL,
                                response_model=manager_settings.RESPONSE_MODEL,
                                backend=manager_settings.BACKEND,
@@ -39,4 +44,4 @@ class FrontierManager(FronteraFrontierManager):
         self.logger.manager.debug(self._msg('ADD_SEEDS'))
         self._process_components(method_name='add_seeds',
                                  obj=seeds,
-                                 return_classes=(list,))
+                                 return_classes=(GeneratorType,))
