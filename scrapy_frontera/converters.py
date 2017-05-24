@@ -1,5 +1,6 @@
 from scrapy.http.request import Request as ScrapyRequest
 from scrapy.http.response import Response as ScrapyResponse
+from scrapy.utils.request import request_fingerprint
 
 from frontera.core.models import Request as FrontierRequest
 from frontera.core.models import Response as FrontierResponse
@@ -30,8 +31,8 @@ class RequestConverter(BaseRequestConverter):
             'scrapy_body': scrapy_request.body,
             'origin_is_frontier': True,
         }
-        if 'frontier_fingerprint' in scrapy_request.meta:
-            meta['frontier_fingerprint'] = scrapy_request.meta['frontier_fingerprint']
+        meta['frontier_fingerprint'] = scrapy_request.meta.get('frontier_fingerprint',
+                                       request_fingerprint(scrapy_request))
         return FrontierRequest(url=scrapy_request.url,
                                method=scrapy_request.method,
                                headers=scrapy_request.headers,
