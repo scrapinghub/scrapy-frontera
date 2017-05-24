@@ -1,5 +1,5 @@
-from frontera.utils.managers import FrontierManagerWrapper
 from .converters import RequestConverter, ResponseConverter
+from .utils.managers import FrontierManagerWrapper
 
 
 class ScrapyFrontierManager(FrontierManagerWrapper):
@@ -11,9 +11,4 @@ class ScrapyFrontierManager(FrontierManagerWrapper):
         self.spider = spider
         self.request_converter = RequestConverter(self.spider)
         self.response_converter = ResponseConverter(self.spider, self.request_converter)
-
-    def add_seeds(self, seeds):
-        frontier_seeds = (self.request_converter.to_frontier(seed) for seed in seeds)
-        self.manager.add_seeds(seeds=frontier_seeds)
-
 
