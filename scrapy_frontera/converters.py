@@ -1,3 +1,5 @@
+import uuid
+
 from scrapy.http.request import Request as ScrapyRequest
 from scrapy.http.response import Response as ScrapyResponse
 from scrapy.utils.request import request_fingerprint
@@ -5,6 +7,7 @@ from scrapy.utils.request import request_fingerprint
 from frontera.core.models import Request as FrontierRequest
 from frontera.core.models import Response as FrontierResponse
 from frontera.utils.converters import BaseRequestConverter, BaseResponseConverter
+
 
 
 class RequestConverter(BaseRequestConverter):
@@ -31,8 +34,16 @@ class RequestConverter(BaseRequestConverter):
             'scrapy_body': scrapy_request.body,
             'origin_is_frontier': True,
         }
+
+        fingerprint_scrapy_request = scrapy_request
+        if fingerprint_scrapy_request.dont_filter:
+            # if dont_filter is True, we need to simulate
+            # not filtering by generating a different fingerprint each time we see same request.
+            # So let's altere randomly the url
+            fake_url = fingerprint_scrapy_request.url + str(uuid.uuid4())
+            fingerprint_scrapy_request = fingerprint_scrapy_request.replace(url=fake_url)
         meta['frontier_fingerprint'] = scrapy_request.meta.get('frontier_fingerprint',
-                                       request_fingerprint(scrapy_request))
+                                       request_fingerprint(fingerprint_scrapy_request))
         return FrontierRequest(url=scrapy_request.url,
                                method=scrapy_request.method,
                                headers=scrapy_request.headers,
