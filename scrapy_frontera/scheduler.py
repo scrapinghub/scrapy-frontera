@@ -28,7 +28,8 @@ class FronteraScheduler(Scheduler):
         """
         Only requests which its callback is the spider can be sent 
         """
-        if request.meta.get('cf_store', False):
+        if request.meta.get('cf_store', False) or request.callback.im_func.__name__ in \
+                self.frontier_requests_callbacks:
             if request.callback is None or getattr(request.callback, 'im_self', None) is self.spider:
                 return True
             raise ValueError('Request <{}>: frontera request callback must be a spider method.'.format(request))
@@ -62,6 +63,8 @@ class FronteraScheduler(Scheduler):
 
         if self.crawler.settings.getbool('FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER'):
             self.frontier.add_seeds(spider.start_requests())
+
+        self.frontier_requests_callbacks = self.crawler.settings.getlist('FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER', [])
 
         LOG.info('Starting frontier')
         if not self.frontier.manager.auto_start:
