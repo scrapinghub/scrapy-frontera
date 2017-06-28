@@ -72,10 +72,11 @@ class RequestConverter(BaseRequestConverter):
         for attr, val in frontier_request.meta.get('spider_state', []):
             prev_value = getattr(self.spider, attr, None)
             if prev_value is not None and prev_value != val:
-                _LOG.error("State for attribute '%s' changed from %s to %s by request <%s> so crawl may loose consistency. \
-                           Per request state should be propagated through request meta.", attr, prev_value, val, frontier_request.url)
-            else:
+                _LOG.error("State for attribute '%s' change from '%s' to '%s' attempted by request <%s> so crawl may loose consistency. \
+                           Per request state should be propagated via request attributes.", attr, prev_value, val, frontier_request.url)
+            elif prev_value != val:
                 setattr(self.spider, attr, val)
+                _LOG.info("State for attribute '%s' set to %s by request <%s>", attr, val, frontier_request.url)
 
         return ScrapyRequest(url=frontier_request.url,
                              callback=cb,
