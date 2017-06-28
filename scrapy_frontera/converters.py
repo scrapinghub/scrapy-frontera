@@ -1,5 +1,7 @@
 import uuid
 
+import logging
+
 from scrapy.http.request import Request as ScrapyRequest
 from scrapy.http.response import Response as ScrapyResponse
 from scrapy.utils.request import request_fingerprint
@@ -8,6 +10,8 @@ from frontera.core.models import Request as FrontierRequest
 from frontera.core.models import Response as FrontierResponse
 from frontera.utils.converters import BaseRequestConverter, BaseResponseConverter
 
+
+_LOG = logging.getLogger(__name__)
 
 
 class RequestConverter(BaseRequestConverter):
@@ -27,11 +31,14 @@ class RequestConverter(BaseRequestConverter):
         eb = scrapy_request.errback
         if callable(eb):
             eb = _find_method(self.spider, eb)
+
+        statevars = self.spider.crawler.settings.getlist('FRONTERA_SCHEDULER_STATE_ATTRIBUTES', [])
         meta = {
             'scrapy_callback': cb,
             'scrapy_errback': eb,
             'scrapy_meta': scrapy_request.meta,
             'scrapy_body': scrapy_request.body,
+            'spider_state': [(attr, getattr(self.spider, attr, None)) for attr in statevars],
             'origin_is_frontier': True,
         }
 
@@ -61,6 +68,15 @@ class RequestConverter(BaseRequestConverter):
         body = frontier_request.meta.get('scrapy_body', None)
         meta = frontier_request.meta['scrapy_meta']
         meta['frontier_request'] = frontier_request
+
+        for attr, val in frontier_request.meta.get('spider_state', []):
+            prev_value = getattr(self.spider, attr, None)
+            if prev_value is not None and prev_value != val:
+                _LOG.error("State for attribute '%s' changed from %s to %s by request <%s> so crawl may loose consistency. \
+                           Per request state should be propagated through request meta.", attr, prev_value, val, frontier_request.url)
+            else:
+                setattr(self.spider, attr, val)
+
         return ScrapyRequest(url=frontier_request.url,
                              callback=cb,
                              errback=eb,
