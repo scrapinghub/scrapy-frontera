@@ -19,7 +19,8 @@ class SchedulerSpiderMiddleware(BaseSchedulerMiddleware):
         return self.scheduler.process_spider_output(response, result, spider)
 
     def process_start_requests(self, start_requests, spider):
-        if self.crawler.settings.getbool('FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER'):
+        if self.crawler.settings.getbool('FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER') or \
+            getattr(spider, 'frontera_settings', {}).get('HCF_CONSUMER_FRONTIER', None):
             return []
         return start_requests
 
