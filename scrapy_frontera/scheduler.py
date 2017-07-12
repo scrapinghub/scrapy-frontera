@@ -28,7 +28,7 @@ class FronteraScheduler(Scheduler):
         """
         Only requests which its callback is the spider can be sent 
         """
-        if request.meta.get('cf_store', False) or request.callback.im_func.__name__ in \
+        if request.meta.get('cf_store', False) or request.callback is not None and request.callback.im_func.__name__ in \
                 self.frontier_requests_callbacks:
             if request.callback is None or getattr(request.callback, 'im_self', None) is self.spider:
                 return True
