@@ -47,6 +47,10 @@ class FronteraScheduler(Scheduler):
                                    links=links)
             self.stats.inc_value('frontera/links_extracted_count', len(links))
 
+    def enqueue_request(self, request):
+        LOG.debug("Enqueued request %s", request)
+        return super(FronteraScheduler, self).enqueue_request(request)
+
     def process_exception(self, request, exception, spider):
         error_code = self._get_exception_code(exception)
         if self.is_frontera_request(request):
