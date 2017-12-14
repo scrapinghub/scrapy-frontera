@@ -20,9 +20,11 @@ class FronteraScheduler(Scheduler):
         return obj
 
     def next_request(self):
+        request = super(FronteraScheduler, self).next_request()
+        if request:
+            return request
         if not self.has_pending_requests():
             self._get_requests_from_backend()
-        return super(FronteraScheduler, self).next_request()
 
     def is_frontera_request(self, request):
         """
