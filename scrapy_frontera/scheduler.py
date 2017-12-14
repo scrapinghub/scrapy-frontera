@@ -20,11 +20,16 @@ class FronteraScheduler(Scheduler):
         return obj
 
     def next_request(self):
-        request = super(FronteraScheduler, self).next_request()
-        if request:
-            return request
+        if self.crawler.settings.getbool('FRONTERA_SCHEDULER_ENABLE_CONSUMER_START_REQUESTS'):
+            try:
+                request = next(self.start_requests)
+            except StopIteration:
+                pass
+            else:
+                self.enqueue_request(request)
         if not self.has_pending_requests():
             self._get_requests_from_backend()
+        return super(FronteraScheduler, self).next_request()
 
     def is_frontera_request(self, request):
         """
@@ -64,11 +69,12 @@ class FronteraScheduler(Scheduler):
         settings.set_from_dict(getattr(spider, 'frontera_settings', {}))
         settings.set('STATS_MANAGER', self.stats)
         self.frontier = ScrapyFrontierManager(settings)
+        self.start_requests = spider.start_requests()
 
         self.frontier.set_spider(spider)
 
         if self.crawler.settings.getbool('FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER'):
-            self.frontier.add_seeds(spider.start_requests())
+            self.frontier.add_seeds(self.start_requests)
 
         self.frontier_requests_callbacks = self.crawler.settings.getlist('FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER', [])
 
