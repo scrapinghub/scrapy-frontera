@@ -26,7 +26,7 @@ class FronteraScheduler(Scheduler):
 
     def is_frontera_request(self, request):
         """
-        Only requests which its callback is the spider can be sent 
+        Only requests which its callback is the spider can be sent
         """
         if request.meta.get('cf_store', False) or request.callback is not None and \
                 hasattr(request.callback, 'im_func') and request.callback.im_func.__name__ in \
@@ -45,7 +45,7 @@ class FronteraScheduler(Scheduler):
                 yield element
         if links:
             self.frontier.page_crawled(response=response,
-                                   links=links)
+                                       links=links)
             self.stats.inc_value('frontera/links_extracted_count', len(links))
 
     def process_exception(self, request, exception, spider):
