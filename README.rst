@@ -49,11 +49,30 @@ with `hcf backend <https://github.com/scrapinghub/hcf-backend>`_::
 
     class MySpider(Spider):
 
+        name = 'my-producer'
+
         frontera_settings = {
             'HCF_PROJECT_ID': 11111,
-            'HCF_FRONTIER_NAME': 'myfrontier',
+            'HCF_PRODUCER_FRONTIER': 'myfrontier',
             'HCF_PRODUCER_NUMBER_OF_SLOTS': 8,
         }
+
+Scrapy-frontera also accepts the spider attribute `frontera_settings_json`. This is specially useful for consumers, which need per job
+setup of reading slot.For example, you can configure a consumer spider in this way, for usage with `hcf backend <https://github.com/scrapinghub/hcf-backend>`_::
+
+    class MySpider(Spider):
+
+        name = 'my-consumer'
+
+        frontera_settings = {
+            'HCF_PROJECT_ID': 11111,
+            'HCF_CONSUMER_FRONTIER': 'myfrontier',
+        }
+
+
+and invoke it via::
+
+        scrapy crawl my-consumer -a frontera_settings_json='{"HCF_CONSUMER_SLOT": "0"}'
 
 Requests will go through the Frontera pipeline only if the flag ``cf_store`` with value True is included in the request meta. If ``cf_store`` is not present
 or is False, requests will be processed as normal scrapy request.

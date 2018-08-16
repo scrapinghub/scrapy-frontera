@@ -1,3 +1,4 @@
+import json
 import logging
 
 from scrapy.core.scheduler import Scheduler
@@ -57,6 +58,7 @@ class FronteraScheduler(Scheduler):
         super(FronteraScheduler, self).open(spider)
         settings = ScrapySettingsAdapter(spider.crawler.settings)
         settings.set_from_dict(getattr(spider, 'frontera_settings', {}))
+        settings.set_from_dict(json.loads(getattr(spider, 'frontera_settings_json', '{}')))
         settings.set('STATS_MANAGER', self.stats)
         self.frontier = ScrapyFrontierManager(settings)
 
@@ -65,7 +67,8 @@ class FronteraScheduler(Scheduler):
         if self.crawler.settings.getbool('FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER'):
             self.frontier.add_seeds(spider.start_requests())
 
-        self.frontier_requests_callbacks = self.crawler.settings.getlist('FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER', [])
+        self.frontier_requests_callbacks = \
+            self.crawler.settings.getlist('FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER')
 
         LOG.info('Starting frontier')
         if not self.frontier.manager.auto_start:
