@@ -6,6 +6,8 @@ from scrapy.http.request import Request as ScrapyRequest
 from scrapy.http.response import Response as ScrapyResponse
 from scrapy.utils.request import request_fingerprint
 
+from w3lib.util import to_bytes, to_native_str
+
 from frontera.core.models import Request as FrontierRequest
 from frontera.core.models import Response as FrontierResponse
 from frontera.utils.converters import BaseRequestConverter, BaseResponseConverter
@@ -34,12 +36,12 @@ class RequestConverter(BaseRequestConverter):
 
         statevars = self.spider.crawler.settings.getlist('FRONTERA_SCHEDULER_STATE_ATTRIBUTES', [])
         meta = {
-            'scrapy_callback': cb,
-            'scrapy_errback': eb,
-            'scrapy_meta': scrapy_request.meta,
-            'scrapy_body': scrapy_request.body,
-            'spider_state': [(attr, getattr(self.spider, attr, None)) for attr in statevars],
-            'origin_is_frontier': True,
+            b'scrapy_callback': cb,
+            b'scrapy_errback': eb,
+            b'scrapy_meta': scrapy_request.meta,
+            b'scrapy_body': scrapy_request.body,
+            b'spider_state': [(attr, getattr(self.spider, attr, None)) for attr in statevars],
+            b'origin_is_frontier': True,
         }
 
         fingerprint_scrapy_request = scrapy_request
@@ -49,7 +51,7 @@ class RequestConverter(BaseRequestConverter):
             # So let's altere randomly the url
             fake_url = fingerprint_scrapy_request.url + str(uuid.uuid4())
             fingerprint_scrapy_request = fingerprint_scrapy_request.replace(url=fake_url)
-        meta['frontier_fingerprint'] = scrapy_request.meta.get('frontier_fingerprint',
+        meta[b'frontier_fingerprint'] = scrapy_request.meta.get('frontier_fingerprint',
                                        request_fingerprint(fingerprint_scrapy_request))
         return FrontierRequest(url=scrapy_request.url,
                                method=scrapy_request.method,
@@ -59,17 +61,17 @@ class RequestConverter(BaseRequestConverter):
 
     def from_frontier(self, frontier_request):
         """request: Frontier > Scrapy"""
-        cb = frontier_request.meta.get('scrapy_callback', None)
+        cb = frontier_request.meta.get(b'scrapy_callback', None)
         if cb and self.spider:
             cb = _get_method(self.spider, cb)
-        eb = frontier_request.meta.get('scrapy_errback', None)
+        eb = frontier_request.meta.get(b'scrapy_errback', None)
         if eb and self.spider:
             eb = _get_method(self.spider, eb)
-        body = frontier_request.meta.get('scrapy_body', None)
-        meta = frontier_request.meta['scrapy_meta']
+        body = frontier_request.meta.get(b'scrapy_body', None)
+        meta = frontier_request.meta[b'scrapy_meta']
         meta['frontier_request'] = frontier_request
 
-        for attr, val in frontier_request.meta.get('spider_state', []):
+        for attr, val in frontier_request.meta.get(b'spider_state', []):
             prev_value = getattr(self.spider, attr, None)
             if prev_value is not None and prev_value != val:
                 _LOG.error("State for attribute '%s' change from '%s' to '%s' attempted by request <%s> so crawl may loose consistency. \
@@ -99,7 +101,7 @@ class ResponseConverter(BaseResponseConverter):
         """response: Scrapy > Frontier"""
         frontier_request = scrapy_response.meta.get('frontier_request',
                 self._request_converter.to_frontier(scrapy_response.request))
-        frontier_request.meta['scrapy_meta'] = scrapy_response.meta
+        frontier_request.meta[b'scrapy_meta'] = scrapy_response.meta
         return FrontierResponse(url=scrapy_response.url,
                                 status_code=scrapy_response.status,
                                 headers=scrapy_response.headers,
@@ -116,14 +118,14 @@ class ResponseConverter(BaseResponseConverter):
 
 
 def _find_method(obj, func):
-    if obj and hasattr(func, 'im_self') and func.im_self is obj:
-        return func.im_func.__name__
+    if obj and hasattr(func, '__self__') and func.__self__ is obj:
+        return to_bytes(func.__func__.__name__)
     else:
         raise ValueError("Function %s is not a method of: %s" % (func, obj))
 
 
 def _get_method(obj, name):
-    name = str(name)
+    name = to_native_str(name)
     try:
         return getattr(obj, name)
     except AttributeError:

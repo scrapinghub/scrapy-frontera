@@ -20,8 +20,6 @@ class FrontierManager(FronteraFrontierManager):
         return cls(request_model=manager_settings.REQUEST_MODEL,
                                response_model=manager_settings.RESPONSE_MODEL,
                                backend=manager_settings.BACKEND,
-                               logger=manager_settings.LOGGER,
-                               event_log_manager=manager_settings.EVENT_LOG_MANAGER,
                                middlewares=manager_settings.MIDDLEWARES,
                                test_mode=manager_settings.TEST_MODE,
                                max_requests=manager_settings.MAX_REQUESTS,

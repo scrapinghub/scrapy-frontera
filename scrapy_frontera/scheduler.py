@@ -29,9 +29,9 @@ class FronteraScheduler(Scheduler):
         Only requests which its callback is the spider can be sent
         """
         if request.meta.get('cf_store', False) or request.callback is not None and \
-                hasattr(request.callback, 'im_func') and request.callback.im_func.__name__ in \
+                hasattr(request.callback, '__func__') and request.callback.__func__.__name__ in \
                 self.frontier_requests_callbacks:
-            if request.callback is None or getattr(request.callback, 'im_self', None) is self.spider:
+            if request.callback is None or getattr(request.callback, '__self__', None) is self.spider:
                 return True
             raise ValueError('Request <{}>: frontera request callback must be a spider method.'.format(request))
         return False
@@ -43,9 +43,9 @@ class FronteraScheduler(Scheduler):
                 links.append(element)
             else:
                 yield element
+        self.frontier.page_crawled(response)
         if links:
-            self.frontier.page_crawled(response=response,
-                                       links=links)
+            self.frontier.links_extracted(response.request, links)
             self.stats.inc_value('frontera/links_extracted_count', len(links))
 
     def process_exception(self, request, exception, spider):
@@ -97,7 +97,7 @@ class FronteraScheduler(Scheduler):
             'key_type': 'ip' if downloader.ip_concurrency else 'domain',
             'overused_keys': []
         }
-        for key, slot in downloader.slots.iteritems():
+        for key, slot in downloader.slots.items():
             overused_factor = len(slot.active) / float(slot.concurrency)
             if overused_factor > self.frontier.manager.settings.get('OVERUSED_SLOT_FACTOR'):
                 info['overused_keys'].append(key)

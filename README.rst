@@ -19,11 +19,11 @@ In your project settings.py::
     SCHEDULER = 'scrapy_frontera.scheduler.FronteraScheduler'
 
     DOWNLOADER_MIDDLEWARES = {
-        'frontera.contrib.scrapy.middlewares.schedulers.SchedulerDownloaderMiddleware': 999,
+        'scrapy_frontera.middlewares.SchedulerDownloaderMiddleware': 999,
     }
 
     SPIDER_MIDDLEWARES = {
-        'frontera.contrib.scrapy.middlewares.schedulers.SchedulerSpiderMiddleware': 999,
+        'scrapy_frontera.middlewares.SchedulerSpiderMiddleware': 999,
     }
 
     # Set to True if you want start requests to be redirected to frontier
@@ -39,7 +39,16 @@ In your project settings.py::
     # FRONTERA_SCHEDULER_STATE_ATTRIBUTES = []
 
 
-Plus the usual Frontera setup.
+Plus the usual Frontera setup. You can also set up spider specific frontera settings via the spider class attribute dict ``frontera_settings``. Example
+with `hcf backend <https://github.com/scrapinghub/hcf-backend>`_::
+
+    class MySpider(Spider):
+
+        frontera_settings = {
+            'HCF_PROJECT_ID': 11111,
+            'HCF_FRONTIER_NAME': 'myfrontier',
+            'HCF_PRODUCER_NUMBER_OF_SLOTS': 8,
+        }
 
 Requests will go through the Frontera pipeline only if the flag ``cf_store`` with value True is included in the request meta. If ``cf_store`` is not present
 or is False, requests will be processed as normal scrapy request.
