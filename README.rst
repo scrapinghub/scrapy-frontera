@@ -76,3 +76,6 @@ and invoke it via::
 
 Requests will go through the Frontera pipeline only if the flag ``cf_store`` with value True is included in the request meta. If ``cf_store`` is not present
 or is False, requests will be processed as normal scrapy request.
+
+Requests read from the frontier are directly enqueued by the scheduler. This means that they are not processed by spider middleware. Their
+processing entrypoint is downloader middleware `process_request()` pipeline.
