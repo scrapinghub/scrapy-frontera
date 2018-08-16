@@ -11,6 +11,11 @@ capabilities already present in scrapy, so it provides:
 - Allows frontera components to access scrapy stat manager instance by adding STATS_MANAGER frontera setting
 - Better request/response converters
 
+Versions:
+---------
+
+Up to version 0.1.8, frontera==0.3.3 and python2 are required. Version 0.2 requires frontera==0.7.1 and is compatible with python3.
+
 Usage:
 ------
 
