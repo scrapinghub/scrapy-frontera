@@ -75,6 +75,9 @@ and invoke it via::
 
         scrapy crawl my-consumer -a frontera_settings_json='{"HCF_CONSUMER_SLOT": "0"}'
 
+Settings provided through `frontera_settings_json` overrides those provided using `frontera_settings`, which in turn overrides those provided in the
+project settings.py file.
+
 Requests will go through the Frontera pipeline only if the flag ``cf_store`` with value True is included in the request meta. If ``cf_store`` is not present
 or is False, requests will be processed as normal scrapy request.
 
