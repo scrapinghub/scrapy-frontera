@@ -82,7 +82,7 @@ class RequestConverter(BaseRequestConverter):
                              callback=cb,
                              errback=eb,
                              body=body,
-                             method=frontier_request.method,
+                             method=to_native_str(frontier_request.method),
                              headers=frontier_request.headers,
                              cookies=frontier_request.cookies,
                              meta=meta,
