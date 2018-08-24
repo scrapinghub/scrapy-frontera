@@ -1,1 +1,2 @@
 frontera==0.7.1
+scrapy
