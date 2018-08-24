@@ -85,6 +85,9 @@ class FronteraScheduler(Scheduler):
             info = self._get_downloader_info()
             requests = self.frontier.get_next_requests(key_type=info['key_type'], overused_keys=info['overused_keys'])
             for request in requests:
+                if request.errback is None and hasattr(self.spider, 'errback'):
+                    request.errback = self.spider.errback
+                    request.callback = request.callback or self.spider.parse
                 self.enqueue_request(request)
                 self.stats.inc_value('frontera/returned_requests_count')
 

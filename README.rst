@@ -6,19 +6,26 @@ capabilities already present in scrapy, so it provides:
 
 - Scrapy handled request dupefilter
 - Scrapy handled disk and memory request queues
-- Only send to frontera requests marked to be processed by it (using request meta attribute ``cf_store`` to True), thus avoiding lot of conflicts and missing features.
+- Only send to frontera requests marked to be processed by it (using request meta attribute ``cf_store`` to True), thus avoiding lot of conflicts.
 - Allows to set frontera settings from spider constructor, by loading frontera manager after spider instantiation.
 - Allows frontera components to access scrapy stat manager instance by adding STATS_MANAGER frontera setting
-- Better request/response converters
+- Better request/response converters, fully compatible with ScrapyCloud and Scrapy
 - Thoroughly tested, used and featured
+
+The result is that crawler using this scheduler will not work differently than a crawler that doesn't use frontier, and
+reingeneering of a spider in order to be adapted to work with frontier is minimal. 
+
 
 Versions:
 ---------
 
 Up to version 0.1.8, frontera==0.3.3 and python2 are required. Version 0.2 requires frontera==0.7.1 and is compatible with python3.
 
-Usage:
-------
+Usage and features:
+-------------------
+
+Note: In the context of this doc, a producer spider is the spider that writes requests to the frontier, and the consumer is the one that reads
+them from the frontier. They can be either the same or separated ones.
 
 In your project settings.py::
 
@@ -83,3 +90,6 @@ or is False, requests will be processed as normal scrapy request.
 
 Requests read from the frontier are directly enqueued by the scheduler. This means that they are not processed by spider middleware. Their
 processing entrypoint is downloader middleware `process_request()` pipeline.
+
+If requests read from frontier doesn't already have an errback defined, the scheduler will automatically assign the consumer spider `errback` method,
+if it exists, to them. This is specially useful when consumer spider is not the same as the producer one.
