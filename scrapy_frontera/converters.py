@@ -55,7 +55,7 @@ class RequestConverter(BaseRequestConverter):
                                        request_fingerprint(fingerprint_scrapy_request))
         return FrontierRequest(url=scrapy_request.url,
                                method=scrapy_request.method,
-                               headers=scrapy_request.headers,
+                               headers=dict(scrapy_request.headers.items()),
                                cookies=cookies,
                                meta=meta)
 
@@ -102,7 +102,7 @@ class ResponseConverter(BaseResponseConverter):
         frontier_request.meta[b'scrapy_meta'] = scrapy_response.meta
         return FrontierResponse(url=scrapy_response.url,
                                 status_code=scrapy_response.status,
-                                headers=scrapy_response.headers,
+                                headers=dict(scrapy_response.headers.items()),
                                 body=scrapy_response.body,
                                 request=frontier_request)
 
