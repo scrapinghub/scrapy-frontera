@@ -10,6 +10,8 @@ capabilities already present in scrapy, so it provides:
 - Allows to set frontera settings from spider constructor, by loading frontera manager after spider instantiation.
 - Allows frontera components to access scrapy stat manager instance by adding STATS_MANAGER frontera setting
 - Better request/response converters, fully compatible with ScrapyCloud and Scrapy
+- Emulates dont_filter=True scrapy Request flag
+- Frontier fingerprint is same as scrapy request fingerprint (can be overriden by passing 'frontier_fingerprint' to request meta)
 - Thoroughly tested, used and featured
 
 The result is that crawler using this scheduler will not work differently than a crawler that doesn't use frontier, and
