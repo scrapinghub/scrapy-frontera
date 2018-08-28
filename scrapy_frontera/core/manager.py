@@ -39,7 +39,12 @@ class FrontierManager(FronteraFrontierManager):
         """
         self._check_startstop()
         # self.event_log_manager.add_seeds(seeds)
-        self.logger.manager.debug(self._msg('ADD_SEEDS'))
+        self._logger.debug(
+            'ADD_SEEDS urls_length=%s',
+            len(seeds)
+            if hasattr(seeds, '__len__')
+            else ('(unknown for type %s)' % type(seeds))
+        )
         self._process_components(method_name='add_seeds',
                                  obj=seeds,
                                  return_classes=(GeneratorType,))
