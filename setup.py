@@ -3,6 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name         = 'scrapy-frontera',
     description  = 'Featured Frontera scheduler for Scrapy',
+    long_description = open('README.rst').read(),
     version      = '0.2.2',
     licence      = 'BSD',
     url          = 'https://github.com/scrapinghub/hcf-backend',
