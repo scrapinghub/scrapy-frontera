@@ -21,7 +21,7 @@ class FrontierManagerWrapper(object):
         self.manager.stop()
 
     def add_seeds(self, seeds):
-        frontier_seeds = (self.request_converter.to_frontier(seed) for seed in seeds)
+        frontier_seeds = [self.request_converter.to_frontier(seed) for seed in seeds]
         self.manager.add_seeds(seeds=frontier_seeds)
 
     def get_next_requests(self, max_next_requests=0, **kwargs):

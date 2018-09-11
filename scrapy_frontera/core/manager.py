@@ -27,19 +27,3 @@ class FrontierManager(FronteraFrontierManager):
                                auto_start=manager_settings.AUTO_START,
                                settings=manager_settings,
                                canonicalsolver=manager_settings.CANONICAL_SOLVER)
-
-
-    def add_seeds(self, seeds):
-        """
-        Adds a list of seed requests (seed URLs) as entry point for the crawl.
-
-        :param list seeds: A list of :class:`Request <frontera.core.models.Request>` objects.
-
-        :return: None.
-        """
-        self._check_startstop()
-        # self.event_log_manager.add_seeds(seeds)
-        self.logger.manager.debug(self._msg('ADD_SEEDS'))
-        self._process_components(method_name='add_seeds',
-                                 obj=seeds,
-                                 return_classes=(GeneratorType,))
