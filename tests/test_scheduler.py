@@ -9,8 +9,6 @@ from scrapy.settings import Settings
 from scrapy.utils.test import get_crawler
 from scrapy.crawler import CrawlerRunner
 
-from frontera.contrib.backends import CommonBackend
-
 
 TEST_SETTINGS = {
     'SCHEDULER': 'scrapy_frontera.scheduler.FronteraScheduler',
@@ -27,20 +25,26 @@ TEST_SETTINGS = {
 class TestSpider(Spider):
     name = 'test'
     success = False
+    success2 = False
 
     def start_requests(self):
         yield Request('http://example.com')
 
     def parse(self, response):
         self.success = True
+        yield Request('http://example2.com', callback=self.parse2)
+
+    def parse2(self, response):
+        self.success2 = True
 
 
 class TestDownloadHandler:
-    def __init__(self):
-        self.results = []
 
-    def set_results(results):
-        self.results = results
+    results = []
+
+    def set_results(self, results):
+        for r in results:
+            self.results.append(r)
 
     def download_request(self, request, spider):
         return self.results.pop(0)
@@ -50,52 +54,62 @@ class TestDownloadHandler:
 
 
 class FronteraSchedulerTest(TestCase):
-    
-    @patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler')
-    def setUp(self, mocked_handler):
+
+    def setUp(self):
         self.runner = CrawlerRunner()
-        self.mocked_handler = mocked_handler
-        self.mocked_handler.return_value = TestDownloadHandler()
 
     def tearDown(self):
         self.runner.stop()
 
     @defer.inlineCallbacks
     def test_start_requests(self):
-        settings = Settings()
-        settings.setdict(TEST_SETTINGS, priority='cmdline')
-        crawler = get_crawler(TestSpider, settings)
+        with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
+            mocked_handler.return_value = TestDownloadHandler()
+            mocked_handler.return_value.set_results([Response(url='http://example.com'),
+                                                     Response(url='http://example2.com')])
 
-        self.mocked_handler.set_results([Response(url='http://example.com')])
-        yield self.runner.crawl(crawler)
-        self.assertTrue(crawler.spider.success)
+            settings = Settings()
+            settings.setdict(TEST_SETTINGS, priority='cmdline')
+            crawler = get_crawler(TestSpider, settings)
+
+            yield self.runner.crawl(crawler)
+            self.assertTrue(crawler.spider.success)
+            self.assertTrue(crawler.spider.success2)
 
     @defer.inlineCallbacks
     def test_start_requests_to_frontier(self):
-        settings = Settings()
-        settings.setdict(TEST_SETTINGS, priority='cmdline')
-        settings.setdict({
-            'FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER': True,
-        })
-        crawler = get_crawler(TestSpider, settings)
+        with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
+            mocked_handler.return_value = TestDownloadHandler()
+            mocked_handler.return_value.set_results([Response(url='http://example.com'),
+                                                     Response(url='http://example2.com')])
 
-        self.mocked_handler.set_results([Response(url='http://example.com')])
-        yield self.runner.crawl(crawler)
-        self.assertTrue(crawler.spider.success)
-
-    @defer.inlineCallbacks
-    def test_start_requests_to_frontier_ii(self):
-        with patch('frontera.contrib.backends.memory.MemoryBaseBackend.add_seeds') as mocked_add_seeds:
             settings = Settings()
             settings.setdict(TEST_SETTINGS, priority='cmdline')
             settings.setdict({
                 'FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER': True,
             })
-
             crawler = get_crawler(TestSpider, settings)
 
-            self.mocked_handler.set_results([Response(url='http://example.com')])
-            mocked_add_seeds.return_value = None
             yield self.runner.crawl(crawler)
-            self.assertFalse(crawler.spider.success)
-            self.assertEqual(mocked_add_seeds.call_count, 1)
+            self.assertTrue(crawler.spider.success)
+            self.assertTrue(crawler.spider.success2)
+
+    @defer.inlineCallbacks
+    def test_start_requests_to_frontier_ii(self):
+        with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
+            mocked_handler.return_value = TestDownloadHandler()
+            mocked_handler.set_results([Response(url='http://example.com')])
+
+            with patch('frontera.contrib.backends.memory.MemoryBaseBackend.add_seeds') as mocked_add_seeds:
+                mocked_add_seeds.return_value = None
+                settings = Settings()
+                settings.setdict(TEST_SETTINGS, priority='cmdline')
+                settings.setdict({
+                    'FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER': True,
+                })
+
+                crawler = get_crawler(TestSpider, settings)
+
+                yield self.runner.crawl(crawler)
+                self.assertFalse(crawler.spider.success)
+                self.assertEqual(mocked_add_seeds.call_count, 1)
