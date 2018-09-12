@@ -6,7 +6,7 @@ setup(
     long_description = open('README.rst').read(),
     version      = '0.2.3',
     licence      = 'BSD',
-    url          = 'https://github.com/scrapinghub/hcf-backend',
+    url          = 'https://github.com/scrapinghub/scrapy-frontera',
     maintainer   = 'Scrapinghub',
     packages     = find_packages(),
     install_requires=('frontera==0.7.1',),
