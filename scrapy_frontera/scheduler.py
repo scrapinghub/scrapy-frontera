@@ -91,6 +91,12 @@ class FronteraScheduler(Scheduler):
                 self.enqueue_request(request)
                 self.stats.inc_value('frontera/returned_requests_count')
 
+    def enqueue_request(self, request):
+        if self.is_frontera_request(request):
+            self.frontier.add_seeds([request])
+            return False
+        return super(FronteraScheduler, self).enqueue_request(request)
+
     def _get_exception_code(self, exception):
         try:
             return exception.__class__.__name__

@@ -34,11 +34,11 @@ In your project settings.py::
     SCHEDULER = 'scrapy_frontera.scheduler.FronteraScheduler'
 
     DOWNLOADER_MIDDLEWARES = {
-        'scrapy_frontera.middlewares.SchedulerDownloaderMiddleware': 999,
+        'scrapy_frontera.middlewares.SchedulerDownloaderMiddleware': 0,
     }
 
     SPIDER_MIDDLEWARES = {
-        'scrapy_frontera.middlewares.SchedulerSpiderMiddleware': 999,
+        'scrapy_frontera.middlewares.SchedulerSpiderMiddleware': 0,
     }
 
     # Set to True if you want start requests to be redirected to frontier

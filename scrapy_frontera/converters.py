@@ -69,6 +69,7 @@ class RequestConverter(BaseRequestConverter):
             eb = _get_method(self.spider, eb)
         body = frontier_request.meta.get(b'scrapy_body', None)
         meta = frontier_request.meta[b'scrapy_meta']
+        meta.pop('cf_store', None)
         for attr, val in frontier_request.meta.get(b'spider_state', []):
             prev_value = getattr(self.spider, attr, None)
             if prev_value is not None and prev_value != val:
