@@ -21,13 +21,13 @@ reingeneering of a spider in order to be adapted to work with frontier is minima
 Versions:
 ---------
 
-Up to version 0.1.8, frontera==0.3.3 and python2 are required. Version 0.2 requires frontera==0.7.1 and is compatible with python3.
+Up to version 0.1.8, frontera==0.3.3 and python2 are required. Version 0.2.x requires frontera==0.7.1 and is compatible with python3.
 
 Usage and features:
 -------------------
 
 Note: In the context of this doc, a producer spider is the spider that writes requests to the frontier, and the consumer is the one that reads
-them from the frontier. They can be either the same or separated ones.
+them from the frontier. They can be either the same spider or separated ones.
 
 In your project settings.py::
 
@@ -88,7 +88,8 @@ Settings provided through `frontera_settings_json` overrides those provided usin
 project settings.py file.
 
 Requests will go through the Frontera pipeline only if the flag ``cf_store`` with value True is included in the request meta. If ``cf_store`` is not present
-or is False, requests will be processed as normal scrapy request.
+or is False, requests will be processed as normal scrapy request. An alternative to ``cf_store`` flag are the settings ``FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER``
+and ``FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER`` (see above about usage of these settings)
 
 Requests read from the frontier are directly enqueued by the scheduler. This means that they are not processed by spider middleware. Their
 processing entrypoint is downloader middleware `process_request()` pipeline.
