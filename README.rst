@@ -23,6 +23,12 @@ Versions:
 
 Up to version 0.1.8, frontera==0.3.3 and python2 are required. Version 0.2.x requires frontera==0.7.1 and is compatible with python3.
 
+Installation:
+-------------
+
+pip install scrapy-frontera
+
+
 Usage and features:
 -------------------
 
