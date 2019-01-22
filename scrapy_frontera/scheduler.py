@@ -47,7 +47,7 @@ class FronteraScheduler(Scheduler):
         self.frontier.page_crawled(response)
         if links:
             self.frontier.links_extracted(response.request, links)
-            self.stats.inc_value('frontera/links_extracted_count', len(links))
+            self.stats.inc_value('scrapyfrontera/links_extracted_count', len(links))
 
     def process_exception(self, request, exception, spider):
         error_code = self._get_exception_code(exception)
@@ -88,8 +88,13 @@ class FronteraScheduler(Scheduler):
                 if request.errback is None and hasattr(self.spider, 'errback'):
                     request.errback = self.spider.errback
                     request.callback = request.callback or self.spider.parse
-                self.enqueue_request(request)
-                self.stats.inc_value('frontera/returned_requests_count')
+                if hasattr(self.spider, 'preprocess_request_from_frontier'):
+                    request = self.spider.preprocess_request_from_frontier(request)
+                if request is None:
+                    self.stats.inc_value('scrapyfrontera/ignored_requests_count')
+                else:
+                    self.enqueue_request(request)
+                    self.stats.inc_value('scrapyfrontera/returned_requests_count')
 
     def enqueue_request(self, request):
         if self.is_frontera_request(request):

@@ -12,6 +12,7 @@ capabilities already present in scrapy, so it provides:
 - Better request/response converters, fully compatible with ScrapyCloud and Scrapy
 - Emulates dont_filter=True scrapy Request flag
 - Frontier fingerprint is same as scrapy request fingerprint (can be overriden by passing 'frontier_fingerprint' to request meta)
+- allow custom preprocessing or ignoring of request from frontier before actually being enqueued
 - Thoroughly tested, used and featured
 
 The result is that crawler using this scheduler will not work differently than a crawler that doesn't use frontier, and
@@ -98,7 +99,10 @@ or is False, requests will be processed as normal scrapy request. An alternative
 and ``FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER`` (see above about usage of these settings)
 
 Requests read from the frontier are directly enqueued by the scheduler. This means that they are not processed by spider middleware. Their
-processing entrypoint is downloader middleware `process_request()` pipeline.
+processing entrypoint is downloader middleware `process_request()` pipeline. But if you need to preprocess requests incoming from the frontier
+in the spider, you can define the spider method `preprocess_request_from_frontier(request: scrapy.Request)`. If defined, the scheduler will invoke
+it before actually enqueuing it. This method must returns either None or a request (same from the call, or another). This return value is what
+will be actually enqueued, so if it is None, request is skipped (not enqueued).
 
 If requests read from frontier doesn't already have an errback defined, the scheduler will automatically assign the consumer spider `errback` method,
 if it exists, to them. This is specially useful when consumer spider is not the same as the producer one.
