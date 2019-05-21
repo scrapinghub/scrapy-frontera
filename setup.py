@@ -9,7 +9,10 @@ setup(
     url          = 'https://github.com/scrapinghub/scrapy-frontera',
     maintainer   = 'Scrapinghub',
     packages     = find_packages(),
-    install_requires=('frontera==0.7.1',),
+    install_requires=(
+        'frontera==0.7.1',
+        'scrapy',
+    ),
     classifiers = [
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
