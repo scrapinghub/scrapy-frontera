@@ -61,8 +61,15 @@ In your project settings.py::
     # FRONTERA_SCHEDULER_STATE_ATTRIBUTES = []
 
 
-Plus the usual Frontera setup. You can also set up spider specific frontera settings via the spider class attribute dict ``frontera_settings``. Example
-with `hcf backend <https://github.com/scrapinghub/hcf-backend>`_::
+Plus the usual Frontera setup. For instance, for `hcf-backend <https://github.com/scrapinghub/hcf-backend>`_::
+
+    BACKEND = 'hcf_backend.HCFBackend'
+    HCF_PROJECT_ID = 11111
+
+    (etc...)
+
+You can also set up spider specific frontera settings via the spider class attribute dict ``frontera_settings``. Example
+with `hcf backend`::
 
     class MySpider(Spider):
 
