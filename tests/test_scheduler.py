@@ -73,18 +73,14 @@ class TestSpider2(Spider):
 
 class TestSpider3(Spider):
     name = 'test'
-    success = False
-    success2 = False
+    success = 0
 
     def start_requests(self):
-        yield Request('http://example.com', callback=self.parse2)
-
-    def parse2(self, response):
-        self.success = True
-        yield Request('http://example2.com')
+        yield Request('http://example.com')
 
     def parse(self, response):
-        self.success2 = True
+        self.success += 1
+        yield Request('http://example2.com')
 
 
 class TestDownloadHandler:
@@ -134,8 +130,7 @@ class FronteraSchedulerTest(TestCase):
     def test_cf_store(self):
         with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
             mocked_handler.return_value = TestDownloadHandler()
-            mocked_handler.return_value.set_results([Response(url='http://example.com', body=b'cf_store'),
-                                                     Response(url='http://example2.com')])
+            mocked_handler.return_value.set_results([Response(url='http://example.com', body=b'cf_store')])
 
             with patch('frontera.contrib.backends.memory.MemoryDequeQueue.schedule') as mocked_schedule:
                 mocked_schedule.return_value = None
@@ -151,8 +146,7 @@ class FronteraSchedulerTest(TestCase):
     def test_callback_requests_to_frontier(self):
         with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
             mocked_handler.return_value = TestDownloadHandler()
-            mocked_handler.return_value.set_results([Response(url='http://example.com'),
-                                                     Response(url='http://example2.com')])
+            mocked_handler.return_value.set_results([Response(url='http://example.com')])
 
             with patch('frontera.contrib.backends.memory.MemoryDequeQueue.schedule') as mocked_schedule:
                 mocked_schedule.return_value = None
@@ -165,6 +159,7 @@ class FronteraSchedulerTest(TestCase):
 
                 yield self.runner.crawl(crawler)
                 self.assertTrue(crawler.spider.success)
+                self.assertFalse(crawler.spider.success2)
                 self.assertEqual(mocked_schedule.call_count, 1)
 
     @defer.inlineCallbacks
@@ -184,7 +179,7 @@ class FronteraSchedulerTest(TestCase):
                 crawler = get_crawler(TestSpider3, settings)
 
                 yield self.runner.crawl(crawler)
-                self.assertTrue(crawler.spider.success)
+                self.assertEqual(crawler.spider.success, 1)
                 self.assertEqual(mocked_schedule.call_count, 1)
 
     @defer.inlineCallbacks
