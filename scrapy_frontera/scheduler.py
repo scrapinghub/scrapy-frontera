@@ -31,6 +31,7 @@ class FronteraScheduler(Scheduler):
         """
         if request.meta.get('cf_store', False) or request.callback is not None and \
                 hasattr(request.callback, '__func__') and request.callback.__func__.__name__ in \
+                self.frontier_requests_callbacks or request.callback is None and 'parse' in \
                 self.frontier_requests_callbacks:
             if request.callback is None or getattr(request.callback, '__self__', None) is self.spider:
                 return True
