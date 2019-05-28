@@ -53,6 +53,7 @@ In your project settings.py::
     # FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER = False
 
     # Allows to redirect to frontier, the requests with the given callback names
+    # Important: this setting doesn't affect start requests.
     # FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER = []
 
     # Spider attributes that need to be passed to the requests redirected to frontier
@@ -76,6 +77,7 @@ with `hcf backend`::
         name = 'my-producer'
 
         frontera_settings = {
+            'HCF_AUTH': 'xxxxxxxxxx',
             'HCF_PROJECT_ID': 11111,
             'HCF_PRODUCER_FRONTIER': 'myfrontier',
             'HCF_PRODUCER_NUMBER_OF_SLOTS': 8,
@@ -89,6 +91,7 @@ setup of reading slot.For example, you can configure a consumer spider in this w
         name = 'my-consumer'
 
         frontera_settings = {
+            'HCF_AUTH': 'xxxxxxxxxx',
             'HCF_PROJECT_ID': 11111,
             'HCF_CONSUMER_FRONTIER': 'myfrontier',
         }
@@ -113,3 +116,5 @@ will be actually enqueued, so if it is None, request is skipped (not enqueued).
 
 If requests read from frontier doesn't already have an errback defined, the scheduler will automatically assign the consumer spider `errback` method,
 if it exists, to them. This is specially useful when consumer spider is not the same as the producer one.
+
+An advanced tutorial is available at `shub-workflow Tutorial <https://github.com/scrapinghub/shub-workflow/wiki/Basic-Tutorial>`_
