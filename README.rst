@@ -117,4 +117,4 @@ will be actually enqueued, so if it is None, request is skipped (not enqueued).
 If requests read from frontier doesn't already have an errback defined, the scheduler will automatically assign the consumer spider `errback` method,
 if it exists, to them. This is specially useful when consumer spider is not the same as the producer one.
 
-An advanced tutorial is available at `shub-workflow Tutorial <https://github.com/scrapinghub/shub-workflow/wiki/Basic-Tutorial>`_
+An integrated tutorial is available at `shub-workflow Tutorial <https://github.com/scrapinghub/shub-workflow/wiki/Basic-Tutorial>`_
