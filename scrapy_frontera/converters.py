@@ -12,6 +12,8 @@ from frontera.core.models import Request as FrontierRequest
 from frontera.core.models import Response as FrontierResponse
 from frontera.utils.converters import BaseRequestConverter, BaseResponseConverter
 
+from .utils import get_callback_name
+
 
 _LOG = logging.getLogger(__name__)
 
@@ -52,7 +54,11 @@ class RequestConverter(BaseRequestConverter):
             fake_url = fingerprint_scrapy_request.url + str(uuid.uuid4())
             fingerprint_scrapy_request = fingerprint_scrapy_request.replace(url=fake_url)
         meta[b'frontier_fingerprint'] = scrapy_request.meta.get('frontier_fingerprint',
-                                       request_fingerprint(fingerprint_scrapy_request))
+                                                                request_fingerprint(fingerprint_scrapy_request))
+        callback_slot_prefix_map = self.spider.crawler.settings.getdict("FRONTERA_SCHEDULER_CALLBACK_SLOT_PREFIX_MAP")
+        frontier_slot_prefix = callback_slot_prefix_map.get(get_callback_name(scrapy_request))
+        if frontier_slot_prefix is not None:
+            meta[b'frontier_slot_prefix'] = frontier_slot_prefix
         return FrontierRequest(url=scrapy_request.url,
                                method=scrapy_request.method,
                                headers=dict(scrapy_request.headers.items()),
@@ -99,7 +105,7 @@ class ResponseConverter(BaseResponseConverter):
     def to_frontier(self, scrapy_response):
         """response: Scrapy > Frontier"""
         frontier_request = scrapy_response.meta.get('frontier_request',
-                self._request_converter.to_frontier(scrapy_response.request))
+                                                    self._request_converter.to_frontier(scrapy_response.request))
         frontier_request.meta[b'scrapy_meta'] = scrapy_response.meta
         return FrontierResponse(url=scrapy_response.url,
                                 status_code=scrapy_response.status,
