@@ -4,7 +4,7 @@ setup(
     name         = 'scrapy-frontera',
     description  = 'Featured Frontera scheduler for Scrapy',
     long_description = open('README.rst').read(),
-    version      = '0.2.7',
+    version      = '0.2.8',
     licence      = 'BSD',
     url          = 'https://github.com/scrapinghub/scrapy-frontera',
     maintainer   = 'Scrapinghub',
