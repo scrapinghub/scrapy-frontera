@@ -119,7 +119,7 @@ will be actually enqueued, so if it is None, request is skipped (not enqueued).
 If requests read from frontier doesn't already have an errback defined, the scheduler will automatically assign the consumer spider ``errback`` method,
 if it exists, to them. This is specially useful when consumer spider is not the same as the producer one.
 
-Another useful setting is ``FRONTERA_SCHEDULER_CALLBACK_SLOT_PREFIX_MAP``. This is a dict which allows to map requests with a specific callback, to a specific slot prefix, different than the default one assigned by frontera backend (actually, only the mentioned hcf-backend supports this feature). For example::
+Another useful setting is ``FRONTERA_SCHEDULER_CALLBACK_SLOT_PREFIX_MAP``. This is a dict which allows to map requests with a specific callback, to a specific slot prefix, and optionally a number of slots, different than the default one assigned by frontera backend (this feature has to be supported by the specific frontera backend you will use, last versions of hcf-backend does supports it). For example::
 
     class MySpider(Spider):
 
@@ -134,7 +134,7 @@ Another useful setting is ``FRONTERA_SCHEDULER_CALLBACK_SLOT_PREFIX_MAP``. This 
         }
 
         custom_settings = {
-            'FRONTERA_SCHEDULER_CALLBACK_SLOT_PREFIX_MAP': {'parse': 'my-producer'},
+            'FRONTERA_SCHEDULER_CALLBACK_SLOT_PREFIX_MAP': {'parse': 'my-producer/4'},
             'FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER': ['parse', 'parse_consumer']
         }
 
@@ -144,6 +144,6 @@ Another useful setting is ``FRONTERA_SCHEDULER_CALLBACK_SLOT_PREFIX_MAP``. This 
         def parse(self, response):
             (...)
 
-Under this configuration, requests with callback ``parse()`` will be saved on slots with prefix ``my-producer``, while requests with callback ``parse_consumer()`` will be saved on slot prefix set by ``HCF_PRODUCER_SLOT_PREFIX``, that is, 'my-consumer'.
+Under this configuration, requests with callback ``parse()`` will be saved on 4 slots with prefix ``my-producer``, while requests with callback ``parse_consumer()`` will use the configuration from hcf settings, that is, 8 slot with prefix ``my-consumer``.
 
 An integrated tutorial is available at `shub-workflow Tutorial <https://github.com/scrapinghub/shub-workflow/wiki/Basic-Tutorial>`_

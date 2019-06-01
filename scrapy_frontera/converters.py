@@ -56,9 +56,12 @@ class RequestConverter(BaseRequestConverter):
         meta[b'frontier_fingerprint'] = scrapy_request.meta.get('frontier_fingerprint',
                                                                 request_fingerprint(fingerprint_scrapy_request))
         callback_slot_prefix_map = self.spider.crawler.settings.getdict("FRONTERA_SCHEDULER_CALLBACK_SLOT_PREFIX_MAP")
-        frontier_slot_prefix = callback_slot_prefix_map.get(get_callback_name(scrapy_request))
-        if frontier_slot_prefix is not None:
+        frontier_slot_prefix_num_slots = callback_slot_prefix_map.get(get_callback_name(scrapy_request))
+        if frontier_slot_prefix_num_slots:
+            frontier_slot_prefix, *rest = frontier_slot_prefix_num_slots.split('/', 1)
             meta[b'frontier_slot_prefix'] = frontier_slot_prefix
+            if rest:
+                meta[b'frontier_number_of_slots'] = int(rest[0])
         return FrontierRequest(url=scrapy_request.url,
                                method=scrapy_request.method,
                                headers=dict(scrapy_request.headers.items()),
