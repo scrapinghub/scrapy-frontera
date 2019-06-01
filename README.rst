@@ -61,6 +61,9 @@ In your project settings.py::
     # This setting allows to transmit that state between different jobs
     # FRONTERA_SCHEDULER_STATE_ATTRIBUTES = []
 
+    # map specific requests to specific slot prefix by its callback name.
+    # FRONTERA_SCHEDULER_CALLBACK_SLOT_PREFIX_MAP = {}
+
 
 Plus the usual Frontera setup. For instance, for `hcf-backend <https://github.com/scrapinghub/hcf-backend>`_::
 
@@ -83,7 +86,7 @@ with `hcf backend`::
             'HCF_PRODUCER_NUMBER_OF_SLOTS': 8,
         }
 
-Scrapy-frontera also accepts the spider attribute `frontera_settings_json`. This is specially useful for consumers, which need per job
+Scrapy-frontera also accepts the spider attribute ``frontera_settings_json``. This is specially useful for consumers, which need per job
 setup of reading slot.For example, you can configure a consumer spider in this way, for usage with `hcf backend <https://github.com/scrapinghub/hcf-backend>`_::
 
     class MySpider(Spider):
@@ -101,20 +104,46 @@ and invoke it via::
 
         scrapy crawl my-consumer -a frontera_settings_json='{"HCF_CONSUMER_SLOT": "0"}'
 
-Settings provided through `frontera_settings_json` overrides those provided using `frontera_settings`, which in turn overrides those provided in the
+Settings provided through ``frontera_settings_json`` overrides those provided using ``frontera_settings``, which in turn overrides those provided in the
 project settings.py file.
 
 Requests will go through the Frontera pipeline only if the flag ``cf_store`` with value True is included in the request meta. If ``cf_store`` is not present
-or is False, requests will be processed as normal scrapy request. An alternative to ``cf_store`` flag are the settings ``FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER``
-and ``FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER`` (see above about usage of these settings)
+or is False, requests will be processed as normal scrapy request. An alternative to ``cf_store`` flag are the scrapy settings ``FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER`` and ``FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER`` (see above about usage of these settings)
 
 Requests read from the frontier are directly enqueued by the scheduler. This means that they are not processed by spider middleware. Their
-processing entrypoint is downloader middleware `process_request()` pipeline. But if you need to preprocess requests incoming from the frontier
-in the spider, you can define the spider method `preprocess_request_from_frontier(request: scrapy.Request)`. If defined, the scheduler will invoke
+processing entrypoint is downloader middleware ``process_request()`` pipeline. But if you need to preprocess requests incoming from the frontier
+in the spider, you can define the spider method ``preprocess_request_from_frontier(request: scrapy.Request)``. If defined, the scheduler will invoke
 it before actually enqueuing it. This method must returns either None or a request (same from the call, or another). This return value is what
 will be actually enqueued, so if it is None, request is skipped (not enqueued).
 
-If requests read from frontier doesn't already have an errback defined, the scheduler will automatically assign the consumer spider `errback` method,
+If requests read from frontier doesn't already have an errback defined, the scheduler will automatically assign the consumer spider ``errback`` method,
 if it exists, to them. This is specially useful when consumer spider is not the same as the producer one.
+
+Another useful setting is ``FRONTERA_SCHEDULER_CALLBACK_SLOT_PREFIX_MAP``. This is a dict which allows to map requests with a specific callback, to a specific slot prefix, different than the default one assigned by frontera backend (actually, only the mentioned hcf-backend supports this feature). For example::
+
+    class MySpider(Spider):
+
+        name = 'my-producer'
+
+        frontera_settings = {
+            'HCF_AUTH': 'xxxxxxxxxx',
+            'HCF_PROJECT_ID': 11111,
+            'HCF_PRODUCER_FRONTIER': 'myfrontier',
+            'HCF_PRODUCER_SLOT_PREFIX': 'my-consumer'
+            'HCF_PRODUCER_NUMBER_OF_SLOTS': 8,
+        }
+
+        custom_settings = {
+            'FRONTERA_SCHEDULER_CALLBACK_SLOT_PREFIX_MAP': {'parse': 'my-producer'},
+            'FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER': ['parse', 'parse_consumer']
+        }
+
+        def parse_consumer(self, response):
+            assert False
+
+        def parse(self, response):
+            (...)
+
+Under this configuration, requests with callback ``parse()`` will be saved on slots with prefix ``my-producer``, while requests with callback ``parse_consumer()`` will be saved on slot prefix set by ``HCF_PRODUCER_SLOT_PREFIX``, that is, 'my-consumer'.
 
 An integrated tutorial is available at `shub-workflow Tutorial <https://github.com/scrapinghub/shub-workflow/wiki/Basic-Tutorial>`_
