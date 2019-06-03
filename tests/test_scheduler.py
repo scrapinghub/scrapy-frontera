@@ -183,6 +183,57 @@ class FronteraSchedulerTest(TestCase):
                 self.assertEqual(mocked_schedule.call_count, 1)
 
     @defer.inlineCallbacks
+    def test_callback_requests_slot_map(self):
+        with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
+            mocked_handler.return_value = TestDownloadHandler()
+            resp1 = Response(url='http://example.com')
+            resp2 = Response(url='http://example2.com')
+            mocked_handler.return_value.set_results([resp1, resp2])
+
+            with patch('frontera.contrib.backends.memory.MemoryDequeQueue.schedule') as mocked_schedule:
+                mocked_schedule.return_value = None
+                settings = Settings()
+                settings.setdict(TEST_SETTINGS, priority='cmdline')
+                settings.setdict({
+                    'FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER': ['parse'],
+                    'FRONTERA_SCHEDULER_CALLBACK_SLOT_PREFIX_MAP': {'parse': 'myslot'},
+                })
+                crawler = get_crawler(TestSpider3, settings)
+
+                yield self.runner.crawl(crawler)
+                self.assertEqual(crawler.spider.success, 1)
+                self.assertEqual(mocked_schedule.call_count, 1)
+                frontera_request = mocked_schedule.call_args_list[0][0][0][0][2]
+                self.assertEqual(frontera_request.url, resp2.url)
+                self.assertEqual(frontera_request.meta[b'frontier_slot_prefix'], 'myslot')
+
+    @defer.inlineCallbacks
+    def test_callback_requests_slot_map_with_num_slots(self):
+        with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
+            mocked_handler.return_value = TestDownloadHandler()
+            resp1 = Response(url='http://example.com')
+            resp2 = Response(url='http://example2.com')
+            mocked_handler.return_value.set_results([resp1, resp2])
+
+            with patch('frontera.contrib.backends.memory.MemoryDequeQueue.schedule') as mocked_schedule:
+                mocked_schedule.return_value = None
+                settings = Settings()
+                settings.setdict(TEST_SETTINGS, priority='cmdline')
+                settings.setdict({
+                    'FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER': ['parse'],
+                    'FRONTERA_SCHEDULER_CALLBACK_SLOT_PREFIX_MAP': {'parse': 'myslot/5'},
+                })
+                crawler = get_crawler(TestSpider3, settings)
+
+                yield self.runner.crawl(crawler)
+                self.assertEqual(crawler.spider.success, 1)
+                self.assertEqual(mocked_schedule.call_count, 1)
+                frontera_request = mocked_schedule.call_args_list[0][0][0][0][2]
+                self.assertEqual(frontera_request.url, resp2.url)
+                self.assertEqual(frontera_request.meta[b'frontier_slot_prefix'], 'myslot')
+                self.assertEqual(frontera_request.meta[b'frontier_number_of_slots'], 5)
+
+    @defer.inlineCallbacks
     def test_start_requests_to_frontier(self):
         with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
             mocked_handler.return_value = TestDownloadHandler()
