@@ -28,7 +28,7 @@ class RequestConverter(BaseRequestConverter):
         if isinstance(scrapy_request.cookies, dict):
             cookies = scrapy_request.cookies
         else:
-            cookies = dict(sum([d.items() for d in scrapy_request.cookies], []))
+            cookies = dict(sum([list(d.items()) for d in scrapy_request.cookies], []))
         cb = scrapy_request.callback
         if callable(cb):
             cb = _find_method(self.spider, cb)
