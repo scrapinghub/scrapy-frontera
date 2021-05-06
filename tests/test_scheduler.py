@@ -110,10 +110,10 @@ class FronteraSchedulerTest(TestCase):
 
     @defer.inlineCallbacks
     def test_start_requests(self):
-        with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
-            mocked_handler.return_value = TestDownloadHandler()
-            mocked_handler.return_value.set_results([Response(url='http://example.com'),
-                                                     Response(url='http://example2.com')])
+        with patch('scrapy.core.downloader.handlers.http.HTTPDownloadHandler') as mocked_handler:
+            mocked_handler.from_crawler.return_value = TestDownloadHandler()
+            mocked_handler.from_crawler.return_value.set_results([Response(url='http://example.com'),
+                                      Response(url='http://example2.com')])
 
             with patch('frontera.contrib.backends.memory.MemoryBaseBackend.links_extracted') as mocked_links_extracted:
                 mocked_links_extracted.return_value = None
@@ -128,9 +128,9 @@ class FronteraSchedulerTest(TestCase):
 
     @defer.inlineCallbacks
     def test_cf_store(self):
-        with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
-            mocked_handler.return_value = TestDownloadHandler()
-            mocked_handler.return_value.set_results([Response(url='http://example.com', body=b'cf_store')])
+        with patch('scrapy.core.downloader.handlers.http.HTTPDownloadHandler') as mocked_handler:
+            mocked_handler.from_crawler.return_value = TestDownloadHandler()
+            mocked_handler.from_crawler.return_value.set_results([Response(url='http://example.com', body=b'cf_store')])
 
             with patch('frontera.contrib.backends.memory.MemoryDequeQueue.schedule') as mocked_schedule:
                 mocked_schedule.return_value = None
@@ -144,9 +144,9 @@ class FronteraSchedulerTest(TestCase):
 
     @defer.inlineCallbacks
     def test_callback_requests_to_frontier(self):
-        with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
-            mocked_handler.return_value = TestDownloadHandler()
-            mocked_handler.return_value.set_results([Response(url='http://example.com')])
+        with patch('scrapy.core.downloader.handlers.http.HTTPDownloadHandler') as mocked_handler:
+            mocked_handler.from_crawler.return_value = TestDownloadHandler()
+            mocked_handler.from_crawler.return_value.set_results([Response(url='http://example.com')])
 
             with patch('frontera.contrib.backends.memory.MemoryDequeQueue.schedule') as mocked_schedule:
                 mocked_schedule.return_value = None
@@ -164,9 +164,9 @@ class FronteraSchedulerTest(TestCase):
 
     @defer.inlineCallbacks
     def test_callback_requests_to_frontier_with_implicit_callback(self):
-        with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
-            mocked_handler.return_value = TestDownloadHandler()
-            mocked_handler.return_value.set_results([Response(url='http://example.com'),
+        with patch('scrapy.core.downloader.handlers.http.HTTPDownloadHandler') as mocked_handler:
+            mocked_handler.from_crawler.return_value = TestDownloadHandler()
+            mocked_handler.from_crawler.return_value.set_results([Response(url='http://example.com'),
                                                      Response(url='http://example2.com')])
 
             with patch('frontera.contrib.backends.memory.MemoryDequeQueue.schedule') as mocked_schedule:
@@ -184,11 +184,11 @@ class FronteraSchedulerTest(TestCase):
 
     @defer.inlineCallbacks
     def test_callback_requests_slot_map(self):
-        with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
-            mocked_handler.return_value = TestDownloadHandler()
+        with patch('scrapy.core.downloader.handlers.http.HTTPDownloadHandler') as mocked_handler:
+            mocked_handler.from_crawler.return_value = TestDownloadHandler()
             resp1 = Response(url='http://example.com')
             resp2 = Response(url='http://example2.com')
-            mocked_handler.return_value.set_results([resp1, resp2])
+            mocked_handler.from_crawler.return_value.set_results([resp1, resp2])
 
             with patch('frontera.contrib.backends.memory.MemoryDequeQueue.schedule') as mocked_schedule:
                 mocked_schedule.return_value = None
@@ -209,11 +209,11 @@ class FronteraSchedulerTest(TestCase):
 
     @defer.inlineCallbacks
     def test_callback_requests_slot_map_with_num_slots(self):
-        with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
-            mocked_handler.return_value = TestDownloadHandler()
+        with patch('scrapy.core.downloader.handlers.http.HTTPDownloadHandler') as mocked_handler:
+            mocked_handler.from_crawler.return_value = TestDownloadHandler()
             resp1 = Response(url='http://example.com')
             resp2 = Response(url='http://example2.com')
-            mocked_handler.return_value.set_results([resp1, resp2])
+            mocked_handler.from_crawler.return_value.set_results([resp1, resp2])
 
             with patch('frontera.contrib.backends.memory.MemoryDequeQueue.schedule') as mocked_schedule:
                 mocked_schedule.return_value = None
@@ -235,9 +235,9 @@ class FronteraSchedulerTest(TestCase):
 
     @defer.inlineCallbacks
     def test_start_requests_to_frontier(self):
-        with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
-            mocked_handler.return_value = TestDownloadHandler()
-            mocked_handler.return_value.set_results([Response(url='http://example.com'),
+        with patch('scrapy.core.downloader.handlers.http.HTTPDownloadHandler') as mocked_handler:
+            mocked_handler.from_crawler.return_value = TestDownloadHandler()
+            mocked_handler.from_crawler.return_value.set_results([Response(url='http://example.com'),
                                                      Response(url='http://example2.com')])
 
             settings = Settings()
@@ -253,8 +253,8 @@ class FronteraSchedulerTest(TestCase):
 
     @defer.inlineCallbacks
     def test_start_requests_to_frontier_ii(self):
-        with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
-            mocked_handler.return_value = TestDownloadHandler()
+        with patch('scrapy.core.downloader.handlers.http.HTTPDownloadHandler') as mocked_handler:
+            mocked_handler.from_crawler.return_value = TestDownloadHandler()
 
             with patch('frontera.contrib.backends.memory.MemoryBaseBackend.add_seeds') as mocked_add_seeds:
                 mocked_add_seeds.return_value = None
@@ -271,9 +271,9 @@ class FronteraSchedulerTest(TestCase):
 
     @defer.inlineCallbacks
     def test_start_handle_errback(self):
-        with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
-            mocked_handler.return_value = TestDownloadHandler()
-            mocked_handler.return_value.set_results([Response(url='http://example.com'),
+        with patch('scrapy.core.downloader.handlers.http.HTTPDownloadHandler') as mocked_handler:
+            mocked_handler.from_crawler.return_value = TestDownloadHandler()
+            mocked_handler.from_crawler.return_value.set_results([Response(url='http://example.com'),
                                                      Response(url='http://example2.com', status=501),
                                                      Response(url='http://example3.com')])
 
@@ -292,9 +292,9 @@ class FronteraSchedulerTest(TestCase):
         """
         Test that we get the expected result with errback cf_store
         """
-        with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
-            mocked_handler.return_value = TestDownloadHandler()
-            mocked_handler.return_value.set_results([Response(url='http://example.com'),
+        with patch('scrapy.core.downloader.handlers.http.HTTPDownloadHandler') as mocked_handler:
+            mocked_handler.from_crawler.return_value = TestDownloadHandler()
+            mocked_handler.from_crawler.return_value.set_results([Response(url='http://example.com'),
                                                      Response(url='http://example2.com', status=501, body=b'cf_store'),
                                                      Response(url='http://example3.com')])
 
@@ -313,9 +313,9 @@ class FronteraSchedulerTest(TestCase):
         """
         Test that we scheduled cf_store request on backend queue
         """
-        with patch('scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler') as mocked_handler:
-            mocked_handler.return_value = TestDownloadHandler()
-            mocked_handler.return_value.set_results([Response(url='http://example.com'),
+        with patch('scrapy.core.downloader.handlers.http.HTTPDownloadHandler') as mocked_handler:
+            mocked_handler.from_crawler.return_value = TestDownloadHandler()
+            mocked_handler.from_crawler.return_value.set_results([Response(url='http://example.com'),
                                                      Response(url='http://example2.com', status=501, body=b'cf_store'),
                                                      Response(url='http://example3.com')])
 
