@@ -3,11 +3,14 @@ from unittest.mock import patch
 from twisted.trial.unittest import TestCase
 from twisted.internet import defer
 
+from frontera.core.components import Queue as FronteraQueue
 from scrapy import Request, Spider
 from scrapy.http import Response
 from scrapy.settings import Settings
 from scrapy.utils.test import get_crawler
 from scrapy.crawler import CrawlerRunner
+
+from scrapy_frontera.converters import FrontierRequest
 
 
 TEST_SETTINGS = {
@@ -83,6 +86,18 @@ class TestSpider3(Spider):
         yield Request('http://example2.com')
 
 
+class TestSpider4(Spider):
+    name = 'test'
+    success = []
+
+    def start_requests(self):
+        yield Request('http://example.com')
+
+    def parse(self, response):
+        if response.url == response.request.url:
+            self.success.append(response.url)
+
+
 class TestDownloadHandler:
 
     results = []
@@ -125,6 +140,27 @@ class FronteraSchedulerTest(TestCase):
                 self.assertTrue(crawler.spider.success)
                 self.assertTrue(crawler.spider.success2)
                 mocked_links_extracted.assert_not_called()
+
+    @defer.inlineCallbacks
+    def test_next_requests(self):
+        """
+        Test default logic: frontier requests are obtained/scheduled before start requests
+        """
+        with patch('scrapy.core.downloader.handlers.http.HTTPDownloadHandler') as mocked_handler:
+            mocked_handler.from_crawler.return_value = TestDownloadHandler()
+            mocked_handler.from_crawler.return_value.set_results([Response(url='http://example2.com'),
+                                      Response(url='http://example.com')])
+
+            with patch('frontera.contrib.backends.memory.MemoryDequeQueue.get_next_requests') as mocked_get_next_requests,\
+                patch('frontera.contrib.backends.memory.MemoryDequeQueue.count') as mocked_count:
+                mocked_get_next_requests.side_effect = [[FrontierRequest(url='http://example2.com')]]
+                mocked_count.side_effect = [1] * 2
+                settings = Settings()
+                settings.setdict(TEST_SETTINGS, priority='cmdline')
+                crawler = get_crawler(TestSpider4, settings)
+
+                yield self.runner.crawl(crawler)
+                self.assertEqual(crawler.spider.success, ['http://example2.com', 'http://example.com'])
 
     @defer.inlineCallbacks
     def test_cf_store(self):
