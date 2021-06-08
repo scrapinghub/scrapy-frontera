@@ -39,6 +39,7 @@ class RequestConverter(BaseRequestConverter):
         statevars = self.spider.crawler.settings.getlist('FRONTERA_SCHEDULER_STATE_ATTRIBUTES', [])
         meta = {
             b'scrapy_callback': cb,
+            b'scrapy_cb_kwargs': scrapy_request.cb_kwargs,
             b'scrapy_errback': eb,
             b'scrapy_meta': scrapy_request.meta,
             b'scrapy_body': scrapy_request.body,
@@ -77,6 +78,7 @@ class RequestConverter(BaseRequestConverter):
         if eb and self.spider:
             eb = _get_method(self.spider, eb)
         body = frontier_request.meta.get(b'scrapy_body', None)
+        cb_kwargs = frontier_request.meta[b'scrapy_cb_kwargs']
         meta = frontier_request.meta[b'scrapy_meta']
         meta.pop('cf_store', None)
         for attr, val in frontier_request.meta.get(b'spider_state', []):
@@ -96,6 +98,7 @@ class RequestConverter(BaseRequestConverter):
                              headers=frontier_request.headers,
                              cookies=frontier_request.cookies,
                              meta=meta,
+                             cb_kwargs=cb_kwargs,
                              dont_filter=True)
 
 
