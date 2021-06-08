@@ -13,3 +13,5 @@ htmlcov
 .coverage
 .vim.custom
 docs/_build
+Pipfile*
+.env
