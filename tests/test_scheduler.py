@@ -98,6 +98,21 @@ class TestSpider4(Spider):
             self.success.append(response.url)
 
 
+class TestSpider5(Spider):
+    name = 'test'
+    success = []
+    frontera_settings = {
+        'AUTO_START': False
+    }
+
+    def start_requests(self):
+        yield Request('http://example.com')
+
+    def parse(self, response):
+        if response.url == response.request.url:
+            self.success.append(response.url)
+
+
 class TestDownloadHandler:
 
     results = []
@@ -158,6 +173,27 @@ class FronteraSchedulerTest(TestCase):
                 settings = Settings()
                 settings.setdict(TEST_SETTINGS, priority='cmdline')
                 crawler = get_crawler(TestSpider4, settings)
+
+                yield self.runner.crawl(crawler)
+                self.assertEqual(crawler.spider.success, ['http://example2.com', 'http://example.com'])
+
+    @defer.inlineCallbacks
+    def test_next_requests_not_autostart(self):
+        """
+        Test default logic: frontier requests are obtained/scheduled before start requests
+        """
+        with patch('scrapy.core.downloader.handlers.http.HTTPDownloadHandler') as mocked_handler:
+            mocked_handler.from_crawler.return_value = TestDownloadHandler()
+            mocked_handler.from_crawler.return_value.set_results([Response(url='http://example2.com'),
+                                      Response(url='http://example.com')])
+
+            with patch('frontera.contrib.backends.memory.MemoryDequeQueue.get_next_requests') as mocked_get_next_requests,\
+                patch('frontera.contrib.backends.memory.MemoryDequeQueue.count') as mocked_count:
+                mocked_get_next_requests.side_effect = [[FrontierRequest(url='http://example2.com')]]
+                mocked_count.side_effect = [1] * 2
+                settings = Settings()
+                settings.setdict(TEST_SETTINGS, priority='cmdline')
+                crawler = get_crawler(TestSpider5, settings)
 
                 yield self.runner.crawl(crawler)
                 self.assertEqual(crawler.spider.success, ['http://example2.com', 'http://example.com'])

@@ -39,6 +39,7 @@ class RequestConverter(BaseRequestConverter):
         statevars = self.spider.crawler.settings.getlist('FRONTERA_SCHEDULER_STATE_ATTRIBUTES', [])
         meta = {
             b'scrapy_callback': cb,
+            b'scrapy_cb_kwargs': scrapy_request.cb_kwargs,
             b'scrapy_errback': eb,
             b'scrapy_meta': scrapy_request.meta,
             b'scrapy_body': scrapy_request.body,
