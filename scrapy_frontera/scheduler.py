@@ -55,11 +55,11 @@ class FronteraScheduler(Scheduler):
 
     def open(self, spider):
         super(FronteraScheduler, self).open(spider)
-        settings = ScrapySettingsAdapter(spider.crawler.settings)
-        settings.set_from_dict(getattr(spider, 'frontera_settings', {}))
-        settings.set_from_dict(json.loads(getattr(spider, 'frontera_settings_json', '{}')))
-        settings.set('STATS_MANAGER', self.stats)
-        self.frontier = ScrapyFrontierManager(settings)
+        frontera_settings = ScrapySettingsAdapter(spider.crawler.settings)
+        frontera_settings.set_from_dict(getattr(spider, 'frontera_settings', {}))
+        frontera_settings.set_from_dict(json.loads(getattr(spider, 'frontera_settings_json', '{}')))
+        frontera_settings.set('STATS_MANAGER', self.stats)
+        self.frontier = ScrapyFrontierManager(frontera_settings)
 
         self.frontier.set_spider(spider)
 
