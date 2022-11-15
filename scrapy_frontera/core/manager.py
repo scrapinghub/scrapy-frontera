@@ -1,10 +1,15 @@
-from collections import Iterable
 from types import GeneratorType
 
 from frontera.core.manager import FrontierManager as FronteraFrontierManager
 from frontera.settings import Settings
 
 from scrapy_frontera.settings import DEFAULT_SETTINGS
+
+try:
+    from collections import Iterable
+except ImportError:
+    from collections.abc import Iterable
+
 
 class FrontierManager(FronteraFrontierManager):
 
