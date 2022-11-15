@@ -1,3 +1,5 @@
+Pipfile
+Pipfile.lock
 *.pyc
 /build
 /*.egg-info
