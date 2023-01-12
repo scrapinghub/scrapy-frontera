@@ -11,7 +11,7 @@ capabilities already present in scrapy, so it provides:
 - Allows frontera components to access scrapy stat manager instance by adding STATS_MANAGER frontera setting
 - Better request/response converters, fully compatible with ScrapyCloud and Scrapy
 - Emulates dont_filter=True scrapy Request flag
-- Frontier fingerprint is same as scrapy request fingerprint (can be overriden by passing 'frontier_fingerprint' to request meta)
+- Frontier fingerprint is same as scrapy request fingerprint (can be overridden by passing 'frontier_fingerprint' to request meta)
 - allow custom preprocessing or ignoring of request from frontier before actually being enqueued
 - Thoroughly tested, used and featured
 
