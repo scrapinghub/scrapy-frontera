@@ -4,7 +4,6 @@ import logging
 
 from scrapy.http.request import Request as ScrapyRequest
 from scrapy.http.response import Response as ScrapyResponse
-from scrapy.utils.request import request_fingerprint
 
 from w3lib.util import to_bytes, to_native_str
 
@@ -23,6 +22,12 @@ class RequestConverter(BaseRequestConverter):
 
     def __init__(self, spider):
         self.spider = spider
+        crawler = spider.crawler
+        if hasattr(crawler, "request_fingerprinter"):
+            self.request_fingerprint = crawler.request_fingerprinter.fingerprint
+        else:
+            from scrapy.utils.request import request_fingerprint
+            self.request_fingerprint = request_fingerprint
 
     def to_frontier(self, scrapy_request):
         """request: Scrapy > Frontier"""
@@ -56,7 +61,7 @@ class RequestConverter(BaseRequestConverter):
             fake_url = fingerprint_scrapy_request.url + str(uuid.uuid4())
             fingerprint_scrapy_request = fingerprint_scrapy_request.replace(url=fake_url)
         meta[b"frontier_fingerprint"] = scrapy_request.meta.get(
-            "frontier_fingerprint", request_fingerprint(fingerprint_scrapy_request)
+            "frontier_fingerprint", self.request_fingerprint(fingerprint_scrapy_request)
         )
         callback_slot_prefix_map = self.spider.crawler.settings.getdict("FRONTERA_SCHEDULER_CALLBACK_SLOT_PREFIX_MAP")
         frontier_slot_prefix_num_slots = callback_slot_prefix_map.get(get_callback_name(scrapy_request))
