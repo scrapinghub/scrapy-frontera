@@ -17,6 +17,7 @@ TEST_SETTINGS = {
     'DOWNLOADER_MIDDLEWARES': {
         'scrapy_frontera.middlewares.SchedulerDownloaderMiddleware': 0,
     },
+    'REQUEST_FINGERPRINTER_IMPLEMENTATION': '2.7',
     'SPIDER_MIDDLEWARES': {
         'scrapy_frontera.middlewares.SchedulerSpiderMiddleware': 0,
     },
