@@ -23,7 +23,7 @@ TEST_SETTINGS = {
 }
 
 
-class TestSpider(Spider):
+class _TestSpider(Spider):
     name = 'test'
     success = False
     success2 = False
@@ -56,7 +56,7 @@ class TestSpider(Spider):
         self.success3 = True
 
 
-class TestSpider2(Spider):
+class _TestSpider2(Spider):
     name = 'test'
     success = False
     success2 = False
@@ -72,7 +72,7 @@ class TestSpider2(Spider):
         self.success2 = True
 
 
-class TestSpider3(Spider):
+class _TestSpider3(Spider):
     name = 'test'
     success = 0
 
@@ -135,7 +135,7 @@ class FronteraSchedulerTest(TestCase):
                 mocked_links_extracted.return_value = None
                 settings = Settings()
                 settings.setdict(TEST_SETTINGS, priority='cmdline')
-                crawler = get_crawler(TestSpider, settings)
+                crawler = get_crawler(_TestSpider, settings)
 
                 yield self.runner.crawl(crawler)
                 self.assertTrue(crawler.spider.success)
@@ -156,7 +156,7 @@ class FronteraSchedulerTest(TestCase):
                 mocked_schedule.return_value = None
                 settings = Settings()
                 settings.setdict(TEST_SETTINGS, priority='cmdline')
-                crawler = get_crawler(TestSpider, settings)
+                crawler = get_crawler(_TestSpider, settings)
 
                 yield self.runner.crawl(crawler)
                 self.assertTrue(crawler.spider.success)
@@ -179,7 +179,7 @@ class FronteraSchedulerTest(TestCase):
                 settings.setdict({
                     'FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER': ['parse2'],
                 })
-                crawler = get_crawler(TestSpider2, settings)
+                crawler = get_crawler(_TestSpider2, settings)
 
                 yield self.runner.crawl(crawler)
                 self.assertTrue(crawler.spider.success)
@@ -204,7 +204,7 @@ class FronteraSchedulerTest(TestCase):
                 settings.setdict({
                     'FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER': ['parse'],
                 })
-                crawler = get_crawler(TestSpider3, settings)
+                crawler = get_crawler(_TestSpider3, settings)
 
                 yield self.runner.crawl(crawler)
                 self.assertEqual(crawler.spider.success, 1)
@@ -225,7 +225,7 @@ class FronteraSchedulerTest(TestCase):
                     'FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER': ['parse'],
                     'FRONTERA_SCHEDULER_CALLBACK_SLOT_PREFIX_MAP': {'parse': 'myslot'},
                 })
-                crawler = get_crawler(TestSpider3, settings)
+                crawler = get_crawler(_TestSpider3, settings)
 
                 yield self.runner.crawl(crawler)
                 self.assertEqual(crawler.spider.success, 1)
@@ -249,7 +249,7 @@ class FronteraSchedulerTest(TestCase):
                     'FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER': ['parse'],
                     'FRONTERA_SCHEDULER_CALLBACK_SLOT_PREFIX_MAP': {'parse': 'myslot/5'},
                 })
-                crawler = get_crawler(TestSpider3, settings)
+                crawler = get_crawler(_TestSpider3, settings)
 
                 yield self.runner.crawl(crawler)
                 self.assertEqual(crawler.spider.success, 1)
@@ -275,7 +275,7 @@ class FronteraSchedulerTest(TestCase):
             settings.setdict({
                 'FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER': True,
             })
-            crawler = get_crawler(TestSpider, settings)
+            crawler = get_crawler(_TestSpider, settings)
 
             yield self.runner.crawl(crawler)
             self.assertTrue(crawler.spider.success)
@@ -294,7 +294,7 @@ class FronteraSchedulerTest(TestCase):
                     'FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER': True,
                 })
 
-                crawler = get_crawler(TestSpider, settings)
+                crawler = get_crawler(_TestSpider, settings)
 
                 yield self.runner.crawl(crawler)
                 self.assertEqual(mocked_add_seeds.call_count, 1)
@@ -313,7 +313,7 @@ class FronteraSchedulerTest(TestCase):
 
             settings = Settings()
             settings.setdict(TEST_SETTINGS, priority='cmdline')
-            crawler = get_crawler(TestSpider, settings)
+            crawler = get_crawler(_TestSpider, settings)
 
             yield self.runner.crawl(crawler)
             self.assertTrue(crawler.spider.success)
@@ -338,7 +338,7 @@ class FronteraSchedulerTest(TestCase):
 
             settings = Settings()
             settings.setdict(TEST_SETTINGS, priority='cmdline')
-            crawler = get_crawler(TestSpider, settings)
+            crawler = get_crawler(_TestSpider, settings)
 
             yield self.runner.crawl(crawler)
             self.assertTrue(crawler.spider.success)
@@ -365,7 +365,7 @@ class FronteraSchedulerTest(TestCase):
                 mocked_schedule.return_value = None
                 settings = Settings()
                 settings.setdict(TEST_SETTINGS, priority='cmdline')
-                crawler = get_crawler(TestSpider, settings)
+                crawler = get_crawler(_TestSpider, settings)
 
                 yield self.runner.crawl(crawler)
                 self.assertTrue(crawler.spider.success)
