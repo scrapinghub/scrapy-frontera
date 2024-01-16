@@ -11,7 +11,7 @@ setup(
     packages     = find_packages(),
     install_requires=(
         'frontera==0.7.1',
-        'scrapy',
+        'scrapy>=1.7.0',
     ),
     classifiers = [
         'Development Status :: 5 - Production/Stable',
