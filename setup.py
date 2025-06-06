@@ -6,7 +6,7 @@ setup(
     name="scrapy-frontera",
     description="Featured Frontera scheduler for Scrapy",
     long_description=Path("README.rst").read_text(),
-    version="0.2.10",
+    version="0.3.0",
     licence="BSD",
     url="https://github.com/scrapinghub/scrapy-frontera",
     maintainer="Scrapinghub",

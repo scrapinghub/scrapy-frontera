@@ -2,7 +2,7 @@
 scrapy-frontera changelog
 =========================
 
-0.3.0 (unreleased)
+0.3.0 (2025-06-06)
 ==================
 
 -   Drop Python 3.8 support, add Python 3.9+ support.
