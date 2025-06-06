@@ -1,19 +1,20 @@
-from .converters import RequestConverter, ResponseConverter
-
 from scrapy_frontera.core.manager import FrontierManager
 
+from .converters import RequestConverter, ResponseConverter
 
-class ScrapyFrontierManager(object):
 
+class ScrapyFrontierManager:
     spider = None
 
     def set_spider(self, spider):
-        assert self.spider is None, 'Spider is already set. Only one spider is supported per process.'
+        assert self.spider is None, (
+            "Spider is already set. Only one spider is supported per process."
+        )
         self.spider = spider
         self.request_converter = RequestConverter(self.spider)
         self.response_converter = ResponseConverter(self.spider, self.request_converter)
 
-    def __init__(self, settings):
+    def __init__(self, settings=None):
         self.manager = FrontierManager.from_settings(settings)
 
     def start(self):
@@ -27,8 +28,13 @@ class ScrapyFrontierManager(object):
         self.manager.add_seeds(seeds=frontier_seeds)
 
     def get_next_requests(self, max_next_requests=0, **kwargs):
-        frontier_requests = self.manager.get_next_requests(max_next_requests=max_next_requests, **kwargs)
-        return [self.request_converter.from_frontier(frontier_request) for frontier_request in frontier_requests]
+        frontier_requests = self.manager.get_next_requests(
+            max_next_requests=max_next_requests, **kwargs
+        )
+        return [
+            self.request_converter.from_frontier(frontier_request)
+            for frontier_request in frontier_requests
+        ]
 
     def page_crawled(self, response):
         frontier_response = self.response_converter.to_frontier(response)
@@ -40,5 +46,6 @@ class ScrapyFrontierManager(object):
         self.manager.links_extracted(frontera_request, frontera_links)
 
     def request_error(self, request, error):
-        self.manager.request_error(request=self.request_converter.to_frontier(request),
-                                   error=error)
+        self.manager.request_error(
+            request=self.request_converter.to_frontier(request), error=error
+        )

@@ -1,3 +1,5 @@
 DEFAULT_SETTINGS = {
-    'MIDDLEWARES': ['frontera.contrib.middlewares.fingerprint.UrlFingerprintMiddleware'],
+    "MIDDLEWARES": [
+        "frontera.contrib.middlewares.fingerprint.UrlFingerprintMiddleware"
+    ],
 }

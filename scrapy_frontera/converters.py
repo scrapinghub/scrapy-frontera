@@ -1,18 +1,16 @@
-import uuid
-
+import functools
 import logging
-
-from scrapy.http.request import Request as ScrapyRequest
-from scrapy.http.response import Response as ScrapyResponse
-
-from w3lib.util import to_bytes, to_native_str
+import operator
+import uuid
 
 from frontera.core.models import Request as FrontierRequest
 from frontera.core.models import Response as FrontierResponse
 from frontera.utils.converters import BaseRequestConverter, BaseResponseConverter
+from scrapy.http.request import Request as ScrapyRequest
+from scrapy.http.response import Response as ScrapyResponse
+from w3lib.util import to_bytes, to_unicode
 
 from .utils import get_callback_name
-
 
 _LOG = logging.getLogger(__name__)
 
@@ -24,9 +22,14 @@ class RequestConverter(BaseRequestConverter):
         self.spider = spider
         crawler = spider.crawler
         if hasattr(crawler, "request_fingerprinter"):
-            self.request_fingerprint = crawler.request_fingerprinter.fingerprint
+            self.request_fingerprint = (
+                lambda *args, **kwargs: crawler.request_fingerprinter.fingerprint(
+                    *args, **kwargs
+                ).hex()
+            )
         else:
             from scrapy.utils.request import request_fingerprint
+
             self.request_fingerprint = request_fingerprint
 
     def to_frontier(self, scrapy_request):
@@ -34,7 +37,11 @@ class RequestConverter(BaseRequestConverter):
         if isinstance(scrapy_request.cookies, dict):
             cookies = scrapy_request.cookies
         else:
-            cookies = dict(sum([list(d.items()) for d in scrapy_request.cookies], []))
+            cookies = dict(
+                functools.reduce(
+                    operator.iadd, [list(d.items()) for d in scrapy_request.cookies], []
+                )
+            )
         cb = scrapy_request.callback
         if callable(cb):
             cb = _find_method(self.spider, cb)
@@ -42,14 +49,18 @@ class RequestConverter(BaseRequestConverter):
         if callable(eb):
             eb = _find_method(self.spider, eb)
 
-        statevars = self.spider.crawler.settings.getlist("FRONTERA_SCHEDULER_STATE_ATTRIBUTES", [])
+        statevars = self.spider.crawler.settings.getlist(
+            "FRONTERA_SCHEDULER_STATE_ATTRIBUTES", []
+        )
         meta = {
             b"scrapy_callback": cb,
             b"scrapy_cb_kwargs": scrapy_request.cb_kwargs,
             b"scrapy_errback": eb,
             b"scrapy_meta": scrapy_request.meta,
             b"scrapy_body": scrapy_request.body,
-            b"spider_state": [(attr, getattr(self.spider, attr, None)) for attr in statevars],
+            b"spider_state": [
+                (attr, getattr(self.spider, attr, None)) for attr in statevars
+            ],
             b"origin_is_frontier": True,
         }
 
@@ -59,12 +70,18 @@ class RequestConverter(BaseRequestConverter):
             # not filtering by generating a different fingerprint each time we see same request.
             # So let's altere randomly the url
             fake_url = fingerprint_scrapy_request.url + str(uuid.uuid4())
-            fingerprint_scrapy_request = fingerprint_scrapy_request.replace(url=fake_url)
+            fingerprint_scrapy_request = fingerprint_scrapy_request.replace(
+                url=fake_url
+            )
         meta[b"frontier_fingerprint"] = scrapy_request.meta.get(
             "frontier_fingerprint", self.request_fingerprint(fingerprint_scrapy_request)
         )
-        callback_slot_prefix_map = self.spider.crawler.settings.getdict("FRONTERA_SCHEDULER_CALLBACK_SLOT_PREFIX_MAP")
-        frontier_slot_prefix_num_slots = callback_slot_prefix_map.get(get_callback_name(scrapy_request))
+        callback_slot_prefix_map = self.spider.crawler.settings.getdict(
+            "FRONTERA_SCHEDULER_CALLBACK_SLOT_PREFIX_MAP"
+        )
+        frontier_slot_prefix_num_slots = callback_slot_prefix_map.get(
+            get_callback_name(scrapy_request)
+        )
         if frontier_slot_prefix_num_slots:
             frontier_slot_prefix, *rest = frontier_slot_prefix_num_slots.split("/", 1)
             meta[b"frontier_slot_prefix"] = frontier_slot_prefix
@@ -103,14 +120,19 @@ class RequestConverter(BaseRequestConverter):
                 )
             elif prev_value != val:
                 setattr(self.spider, attr, val)
-                _LOG.info("State for attribute '%s' set to %s by request <%s>", attr, val, frontier_request.url)
+                _LOG.info(
+                    "State for attribute '%s' set to %s by request <%s>",
+                    attr,
+                    val,
+                    frontier_request.url,
+                )
 
         return ScrapyRequest(
             url=frontier_request.url,
             callback=cb,
             errback=eb,
             body=body,
-            method=to_native_str(frontier_request.method),
+            method=to_unicode(frontier_request.method),
             headers=frontier_request.headers,
             cookies=frontier_request.cookies,
             meta=meta,
@@ -129,7 +151,8 @@ class ResponseConverter(BaseResponseConverter):
     def to_frontier(self, scrapy_response):
         """response: Scrapy > Frontier"""
         frontier_request = scrapy_response.meta.get(
-            "frontier_request", self._request_converter.to_frontier(scrapy_response.request)
+            "frontier_request",
+            self._request_converter.to_frontier(scrapy_response.request),
         )
         frontier_request.meta[b"scrapy_meta"] = scrapy_response.meta
         return FrontierResponse(
@@ -154,13 +177,12 @@ class ResponseConverter(BaseResponseConverter):
 def _find_method(obj, func):
     if obj and hasattr(func, "__self__") and func.__self__ is obj:
         return to_bytes(func.__func__.__name__)
-    else:
-        raise ValueError("Function %s is not a method of: %s" % (func, obj))
+    raise ValueError(f"Function {func} is not a method of: {obj}")
 
 
 def _get_method(obj, name):
-    name = to_native_str(name)
+    name = to_unicode(name)
     try:
         return getattr(obj, name)
-    except AttributeError:
-        raise ValueError("Method %r not found in: %s" % (name, obj))
+    except AttributeError as e:
+        raise ValueError(f"Method {name!r} not found in: {obj}") from e
