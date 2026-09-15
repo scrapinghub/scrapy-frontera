@@ -26,7 +26,7 @@ filterwarnings = [
 
 [tool.ruff]
 # Keep in sync with python_requires in setup.py.
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 extend-select = [
