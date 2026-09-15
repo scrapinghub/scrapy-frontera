@@ -2,7 +2,9 @@ import json
 import logging
 
 from frontera.contrib.scrapy.settings_adapter import ScrapySettingsAdapter
+from scrapy import signals
 from scrapy.core.scheduler import Scheduler
+from scrapy.exceptions import DontCloseSpider
 from scrapy.http import Request
 
 from .manager import ScrapyFrontierManager
@@ -17,10 +19,11 @@ class FronteraScheduler(Scheduler):
         obj = super().from_crawler(crawler)
         obj.crawler = crawler
         obj.frontier = None
+        obj._frontier_gate_open = True
         return obj
 
     def next_request(self):
-        if not self.has_pending_requests():
+        if self._frontier_gate_open and not self.has_pending_requests():
             self._get_requests_from_backend()
         return super().next_request()
 
@@ -88,6 +91,25 @@ class FronteraScheduler(Scheduler):
         ):
             self.frontier.add_seeds(spider.start_requests())
 
+        if self.crawler.settings.getbool(
+            "FRONTERA_SCHEDULER_DELAY_FRONTIER_UNTIL_IDLE"
+        ):
+            if self.crawler.settings.getbool(
+                "FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER"
+            ) or self.crawler.settings.getbool(
+                "FRONTERA_SCHEDULER_SKIP_START_REQUESTS"
+            ):
+                LOG.warning(
+                    "Ignoring FRONTERA_SCHEDULER_DELAY_FRONTIER_UNTIL_IDLE: start "
+                    "requests are not sent to the Scrapy scheduler, so there is "
+                    "nothing to wait for."
+                )
+            else:
+                self._frontier_gate_open = False
+                self.crawler.signals.connect(
+                    self._on_spider_idle, signal=signals.spider_idle
+                )
+
         self.frontier_requests_callbacks = self.crawler.settings.getlist(
             "FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER"
         )
@@ -101,6 +123,15 @@ class FronteraScheduler(Scheduler):
         LOG.info(f"Finishing frontier ({reason})")
         self.frontier.stop()
         return self.df.close(reason)
+
+    def _on_spider_idle(self, spider):
+        if self._frontier_gate_open:
+            return
+        self._frontier_gate_open = True
+        LOG.info("Spider went idle: reading requests from the frontier backend")
+        self._get_requests_from_backend()
+        if self.has_pending_requests():
+            raise DontCloseSpider
 
     def _get_requests_from_backend(self):
         if not self.frontier.manager.finished:
