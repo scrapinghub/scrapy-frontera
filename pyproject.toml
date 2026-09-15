@@ -24,6 +24,10 @@ filterwarnings = [
     "ignore::DeprecationWarning:.*\\bscrapy\\b",
 ]
 
+[tool.ruff]
+# Keep in sync with python_requires in setup.py.
+target-version = "py39"
+
 [tool.ruff.lint]
 extend-select = [
     # flake8-bugbear
