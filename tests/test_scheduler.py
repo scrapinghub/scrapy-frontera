@@ -1,22 +1,19 @@
 from unittest.mock import patch
 
 from scrapy import Request, Spider
-from scrapy.core.downloader.handlers.http11 import HTTP11DownloadHandler
 from scrapy.http import Response
-from scrapy.settings import Settings
+from scrapy.settings import Settings, default_settings
+from scrapy.utils.misc import load_object
 from scrapy.utils.test import get_crawler
+from twisted.internet import defer
 from twisted.internet.defer import inlineCallbacks
 
-try:
-    from scrapy.core.downloader.handlers.http import HTTPDownloadHandler  # noqa: F401
-except ImportError:  # Scrapy < 2.13
-    DEFAULT_DOWNLOAD_HANDLER_IMPORT_PATH = (
-        "scrapy.core.downloader.handlers.http11.HTTP11DownloadHandler"
-    )
-else:
-    DEFAULT_DOWNLOAD_HANDLER_IMPORT_PATH = (
-        "scrapy.core.downloader.handlers.http.HTTPDownloadHandler"
-    )
+# Patch the class DOWNLOAD_HANDLERS_BASE actually registers for "http": the
+# http11 and http module paths have swapped which one is the real target and
+# which is a deprecated re-export across Scrapy versions, so hardcoding
+# either one can silently no-op and leak real network requests.
+DEFAULT_DOWNLOAD_HANDLER_IMPORT_PATH = default_settings.DOWNLOAD_HANDLERS_BASE["http"]
+DefaultDownloadHandlerClass = load_object(DEFAULT_DOWNLOAD_HANDLER_IMPORT_PATH)
 
 
 TEST_SETTINGS = {
@@ -108,18 +105,22 @@ class MockDownloadHandler:
         for r in results:
             self.results.append(r)
 
-    def download_request(self, request, spider):
-        return self.results.pop(0)
+    def download_request(self, request, spider=None):
+        # Sync, returning an already-fired Deferred: Scrapy's calling
+        # convention for this method (sync vs. awaited coroutine, with or
+        # without a positional spider argument) has changed across versions;
+        # this satisfies all of them.
+        return defer.succeed(self.results.pop(0))
 
     def close(self):
-        pass
+        return defer.succeed(None)
 
 
 def setup_mocked_handler(mocked_handler, results=None):
     handler = MockDownloadHandler()
     if results:
         handler.set_results(results)
-    if hasattr(HTTP11DownloadHandler, "from_crawler"):
+    if hasattr(DefaultDownloadHandlerClass, "from_crawler"):
         mocked_handler.from_crawler.return_value = handler
     else:
         mocked_handler.return_value = handler
