@@ -47,6 +47,31 @@ In your project settings.py::
     # By default they go directly to scrapy downloader
     # FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER = False
 
+    # Set to True to make the scheduler skip start requests entirely (neither
+    # scrapy nor frontier will process them). Useful for a consumer-only spider.
+    # FRONTERA_SCHEDULER_SKIP_START_REQUESTS = False
+
+    # Set to True to stop reading requests from the frontier until the spider
+    # goes idle for the first time. Start requests and frontier requests share
+    # the same scrapy scheduler queue, and by default the frontier may be read
+    # before the first start request is even downloaded (e.g. on a resumed job
+    # the backend already has pending requests).
+    #
+    # The gate is tied to scrapy's spider_idle signal, so it waits for
+    # everything reachable from the start requests through the scrapy
+    # scheduler to finish - not just for the start requests themselves: a
+    # request yielded by a start request's callback, and anything chained
+    # after it, is waited on too. Use it when frontier crawling must not begin
+    # until that whole initial phase is done (e.g. a login/session setup
+    # flow). Once opened the gate stays open, so there is no steady-state
+    # cost, but there is a one-time pause in downloading at the start of the
+    # crawl.
+    #
+    # Ignored, with a warning, when FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER
+    # or FRONTERA_SCHEDULER_SKIP_START_REQUESTS is enabled, since in that case
+    # there are no scrapy-side start requests to wait for.
+    # FRONTERA_SCHEDULER_DELAY_FRONTIER_UNTIL_IDLE = False
+
     # Allows to redirect to frontier, the requests with the given callback names
     # Important: this setting doesn't affect start requests.
     # FRONTERA_SCHEDULER_REQUEST_CALLBACKS_TO_FRONTIER = []

@@ -1,4 +1,6 @@
-from unittest.mock import patch
+import logging
+from contextlib import ExitStack, contextmanager
+from unittest.mock import PropertyMock, patch
 
 from scrapy import Request, Spider
 from scrapy.http import Response
@@ -97,6 +99,32 @@ class _TestSpider3(BaseSpider):
         yield Request("http://example2.com")
 
 
+class _ChainSpider(BaseSpider):
+    name = "test"
+    timeline = None
+
+    def start_requests(self):
+        yield Request("http://start.example")
+
+    def parse(self, response):
+        self.timeline.append(("parse", response.url))
+        if response.url == "http://start.example":
+            yield Request("http://child.example", callback=self.parse_child)
+
+    def parse_child(self, response):
+        self.timeline.append(("parse", response.url))
+
+
+class _EmptyStartSpider(BaseSpider):
+    name = "test"
+
+    def start_requests(self):
+        return iter([])
+
+    def parse(self, response):
+        pass
+
+
 class MockDownloadHandler:
     def __init__(self):
         self.results = []
@@ -109,8 +137,11 @@ class MockDownloadHandler:
         # Sync, returning an already-fired Deferred: Scrapy's calling
         # convention for this method (sync vs. awaited coroutine, with or
         # without a positional spider argument) has changed across versions;
-        # this satisfies all of them.
-        return defer.succeed(self.results.pop(0))
+        # this satisfies all of them. Falls back to an empty 200 response for
+        # the given URL when no scripted result is queued, so tests that
+        # don't care about response content don't need to pre-script one.
+        response = self.results.pop(0) if self.results else Response(url=request.url)
+        return defer.succeed(response)
 
     def close(self):
         return defer.succeed(None)
@@ -124,6 +155,41 @@ def setup_mocked_handler(mocked_handler, results=None):
         mocked_handler.from_crawler.return_value = handler
     else:
         mocked_handler.return_value = handler
+
+
+def first_index(timeline, event):
+    return next(i for i, ev in enumerate(timeline) if ev == event)
+
+
+@contextmanager
+def patch_backend(timeline, requests):
+    """
+    Make the frontier hand out `requests` once, recording every backend read
+    in `timeline`. The memory backend reports itself finished while its
+    (unseeded) queue is empty, which would short-circuit
+    _get_requests_from_backend() before get_next_requests() is ever reached.
+    """
+    pending = [list(requests)]
+
+    def get_next_requests(max_next_requests=0, **kwargs):
+        timeline.append(("backend_fetch",))
+        return pending.pop() if pending else []
+
+    with ExitStack() as stack:
+        stack.enter_context(
+            patch(
+                "scrapy_frontera.manager.ScrapyFrontierManager.get_next_requests",
+                side_effect=get_next_requests,
+            )
+        )
+        stack.enter_context(
+            patch(
+                "frontera.core.manager.FrontierManager.finished",
+                new_callable=PropertyMock,
+                return_value=False,
+            )
+        )
+        yield
 
 
 @inlineCallbacks
@@ -407,3 +473,136 @@ def test_start_handle_errback_with_cf_store_ii():
             assert not crawler.spider.success2
             assert crawler.spider.error
             assert mocked_schedule.call_count == 1
+
+
+@inlineCallbacks
+def test_delay_frontier_until_idle_disabled_by_default():
+    """
+    With FRONTERA_SCHEDULER_DELAY_FRONTIER_UNTIL_IDLE unset (default False),
+    behavior is unchanged: the frontier can be read before the start
+    request's chain has finished.
+    """
+    timeline = []
+    _ChainSpider.timeline = timeline
+    with patch(DEFAULT_DOWNLOAD_HANDLER_IMPORT_PATH) as mocked_handler:
+        setup_mocked_handler(mocked_handler)
+        with patch_backend(timeline, [Request("http://frontier.example")]):
+            settings = Settings()
+            settings.setdict(TEST_SETTINGS, priority="cmdline")
+            crawler = get_crawler(_ChainSpider, settings)
+            yield crawler.crawl()
+
+    assert first_index(timeline, ("backend_fetch",)) < first_index(
+        timeline, ("parse", "http://child.example")
+    )
+
+
+@inlineCallbacks
+def test_delay_frontier_until_idle():
+    """
+    With the setting on, the frontier isn't read until the spider goes idle
+    - i.e. not just after the start request, but after everything reachable
+    from it through the scrapy scheduler (here, its child request) too.
+    """
+    timeline = []
+    _ChainSpider.timeline = timeline
+    with patch(DEFAULT_DOWNLOAD_HANDLER_IMPORT_PATH) as mocked_handler:
+        setup_mocked_handler(mocked_handler)
+        with patch_backend(timeline, [Request("http://frontier.example")]):
+            settings = Settings()
+            settings.setdict(TEST_SETTINGS, priority="cmdline")
+            settings.setdict({"FRONTERA_SCHEDULER_DELAY_FRONTIER_UNTIL_IDLE": True})
+            crawler = get_crawler(_ChainSpider, settings)
+            yield crawler.crawl()
+
+    fetch_i = first_index(timeline, ("backend_fetch",))
+    assert fetch_i > first_index(timeline, ("parse", "http://start.example"))
+    assert fetch_i > first_index(timeline, ("parse", "http://child.example"))
+    assert ("parse", "http://frontier.example") in timeline
+
+
+@inlineCallbacks
+def test_delay_frontier_until_idle_ignored_with_start_requests_to_frontier(caplog):
+    """
+    The setting is meaningless when start requests are diverted into the
+    frontier as seeds - it must be ignored (with a warning), not deadlock
+    the crawl.
+    """
+    caplog.set_level(logging.WARNING)
+    with patch(DEFAULT_DOWNLOAD_HANDLER_IMPORT_PATH) as mocked_handler:
+        setup_mocked_handler(
+            mocked_handler,
+            [
+                Response(url="http://example.com"),
+                Response(url="http://example2.com"),
+            ],
+        )
+
+        settings = Settings()
+        settings.setdict(TEST_SETTINGS, priority="cmdline")
+        settings.setdict(
+            {
+                "FRONTERA_SCHEDULER_START_REQUESTS_TO_FRONTIER": True,
+                "FRONTERA_SCHEDULER_DELAY_FRONTIER_UNTIL_IDLE": True,
+            }
+        )
+        crawler = get_crawler(_TestSpider, settings)
+        yield crawler.crawl()
+        assert crawler.spider.success
+        assert crawler.spider.success2
+
+    assert any(
+        "FRONTERA_SCHEDULER_DELAY_FRONTIER_UNTIL_IDLE" in record.message
+        for record in caplog.records
+    )
+
+
+@inlineCallbacks
+def test_delay_frontier_until_idle_ignored_with_skip_start_requests(caplog):
+    """
+    Same as above, for FRONTERA_SCHEDULER_SKIP_START_REQUESTS: the gate must
+    not stay shut waiting for start requests that will never be scheduled.
+    """
+    caplog.set_level(logging.WARNING)
+    timeline = []
+    _ChainSpider.timeline = timeline
+    with patch(DEFAULT_DOWNLOAD_HANDLER_IMPORT_PATH) as mocked_handler:
+        setup_mocked_handler(mocked_handler)
+        with patch_backend(timeline, [Request("http://frontier.example")]):
+            settings = Settings()
+            settings.setdict(TEST_SETTINGS, priority="cmdline")
+            settings.setdict(
+                {
+                    "FRONTERA_SCHEDULER_SKIP_START_REQUESTS": True,
+                    "FRONTERA_SCHEDULER_DELAY_FRONTIER_UNTIL_IDLE": True,
+                }
+            )
+            crawler = get_crawler(_ChainSpider, settings)
+            yield crawler.crawl()
+
+    assert ("parse", "http://frontier.example") in timeline
+    assert any(
+        "FRONTERA_SCHEDULER_DELAY_FRONTIER_UNTIL_IDLE" in record.message
+        for record in caplog.records
+    )
+
+
+@inlineCallbacks
+def test_delay_frontier_until_idle_with_empty_start_requests():
+    """
+    A spider with no start requests must not hang waiting for spider_idle to
+    open the gate - it fires almost immediately, and the crawl still
+    completes normally.
+    """
+    timeline = []
+    with patch(DEFAULT_DOWNLOAD_HANDLER_IMPORT_PATH) as mocked_handler:
+        setup_mocked_handler(mocked_handler)
+        with patch_backend(timeline, [Request("http://frontier.example")]):
+            settings = Settings()
+            settings.setdict(TEST_SETTINGS, priority="cmdline")
+            settings.setdict({"FRONTERA_SCHEDULER_DELAY_FRONTIER_UNTIL_IDLE": True})
+            crawler = get_crawler(_EmptyStartSpider, settings)
+            yield crawler.crawl()
+
+    assert ("backend_fetch",) in timeline
+    assert crawler.stats.get_value("finish_reason") == "finished"
