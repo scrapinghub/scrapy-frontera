@@ -11,7 +11,7 @@ setup(
     url="https://github.com/scrapinghub/scrapy-frontera",
     maintainer="Scrapinghub",
     packages=find_packages(),
-    python_requires=">=3.9",
+    python_requires=">=3.10",
     install_requires=(
         "frontera>=0.7.2,<0.8",
         "scrapy>=2.7.0",
